@@ -10,29 +10,17 @@ import io.netty.util.concurrent.Future;
  */
 public interface NedisClient {
 
-    Future<String> ping();
+    Future<Long> decr(byte[] key);
+
+    Future<Long> decrBy(byte[] key, long delta);
 
     Future<byte[]> echo(byte[] msg);
 
-    Future<Void> quit();
+    Future<Long> del(byte[]... keys);
 
-    Future<Boolean> set(byte[] key, byte[] value);
+    Future<Object> eval(byte[] script, int numKeys, byte[]... keysvalues);
 
-    Future<Boolean> setnx(byte[] key, byte[] value);
-
-    Future<Boolean> setxx(byte[] key, byte[] value);
-
-    Future<Boolean> setex(byte[] key, byte[] value, long seconds);
-
-    Future<Boolean> setexnx(byte[] key, byte[] value, long seconds);
-
-    Future<Boolean> setexxx(byte[] key, byte[] value, long seconds);
-
-    Future<Boolean> setpx(byte[] key, byte[] value, long milliseconds);
-
-    Future<Boolean> setpxnx(byte[] key, byte[] value, long milliseconds);
-
-    Future<Boolean> setpxxx(byte[] key, byte[] value, long milliseconds);
+    Future<Boolean> exists(byte[] key);
 
     Future<Boolean> expire(byte[] key, long seconds);
 
@@ -40,7 +28,11 @@ public interface NedisClient {
 
     Future<byte[]> get(byte[] key);
 
-    Future<Boolean> exists(byte[] key);
+    Future<Long> incr(byte[] key);
+
+    Future<Long> incrBy(byte[] key, long delta);
+
+    Future<Double> incrByFloat(byte[] key, double delta);
 
     Future<List<byte[]>> mget(byte[]... keys);
 
@@ -48,19 +40,27 @@ public interface NedisClient {
 
     Future<Boolean> msetnx(byte[]... keysvalues);
 
-    Future<Long> del(byte[]... keys);
+    Future<String> ping();
 
-    Future<Long> incr(byte[] key);
+    Future<Void> quit();
 
-    Future<Long> incrBy(byte[] key, long delta);
+    Future<Boolean> set(byte[] key, byte[] value);
 
-    Future<Double> incrByFloat(byte[] key, double delta);
+    Future<Boolean> setex(byte[] key, byte[] value, long seconds);
 
-    Future<Long> decr(byte[] key);
+    Future<Boolean> setexnx(byte[] key, byte[] value, long seconds);
 
-    Future<Long> decrBy(byte[] key, long delta);
+    Future<Boolean> setexxx(byte[] key, byte[] value, long seconds);
 
-    Future<Object> eval(byte[] script, int numKeys, byte[]... keysvalues);
+    Future<Boolean> setnx(byte[] key, byte[] value);
+
+    Future<Boolean> setpx(byte[] key, byte[] value, long milliseconds);
+
+    Future<Boolean> setpxnx(byte[] key, byte[] value, long milliseconds);
+
+    Future<Boolean> setpxxx(byte[] key, byte[] value, long milliseconds);
+
+    Future<Boolean> setxx(byte[] key, byte[] value);
 
     Future<Object> execCmd(byte[] cmd, byte[]... params);
 
