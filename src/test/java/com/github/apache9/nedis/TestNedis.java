@@ -1,15 +1,15 @@
 package com.github.apache9.nedis;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
+import static org.junit.Assert.*;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.Future;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.AfterClass;
@@ -25,26 +25,17 @@ public class TestNedis {
 
     private static RedisServer REDIS;
 
-    private static Channel CLIENT;
-
     private static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup();
+
+    private static NedisClient CLIENT;
 
     @BeforeClass
     public static void setUp() throws IOException, InterruptedException {
         REDIS = new RedisServer(PORT);
         REDIS.start();
         Thread.sleep(2000);
-
-        CLIENT = new Bootstrap().group(WORKER_GROUP).channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<Channel>() {
-
-                    @Override
-                    protected void initChannel(Channel ch) throws Exception {
-                        ch.pipeline().addLast(new RedisRequestEncoder(), new RedisResponseDecoder(),
-                                new RedisDuplexHandler());
-                    }
-
-                }).connect("127.0.0.1", PORT).sync().channel();
+        CLIENT = NedisClientBuilder.builder().group(WORKER_GROUP).channel(NioSocketChannel.class)
+                .connect(new InetSocketAddress("127.0.0.1", PORT)).sync().getNow();
     }
 
     @AfterClass
@@ -55,23 +46,39 @@ public class TestNedis {
         REDIS.stop();
     }
 
+    private byte[] toBytes(String str) {
+        return str.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private String toString(byte[] b) {
+        return new String(b, StandardCharsets.UTF_8);
+    }
+
     @Test
     public void test() throws InterruptedException, ExecutionException {
-        Promise<Object> p1 = CLIENT.eventLoop().newPromise();
-        CLIENT.writeAndFlush(new RedisRequest(p1, new byte[][] {
-            "PING".getBytes(StandardCharsets.US_ASCII)
-        }));
-        Promise<Object> p2 = CLIENT.eventLoop().newPromise();
-        CLIENT.writeAndFlush(new RedisRequest(p2, new byte[][] {
-            "SET".getBytes(StandardCharsets.US_ASCII), "foo".getBytes(StandardCharsets.US_ASCII),
-            "bar".getBytes(StandardCharsets.US_ASCII)
-        }));
-        System.out.println(p1.sync().get());
-        System.out.println(p2.sync().get());
-        Promise<Object> p3 = CLIENT.eventLoop().newPromise();
-        CLIENT.writeAndFlush(new RedisRequest(p3, new byte[][] {
-            "GET".getBytes(StandardCharsets.US_ASCII), "foo".getBytes(StandardCharsets.US_ASCII)
-        }));
-        System.out.println(new String((byte[]) p3.sync().get(), StandardCharsets.US_ASCII));
+        Future<String> pingFuture = CLIENT.ping();
+        Future<Boolean> setFuture = CLIENT.set(toBytes("foo"), toBytes("bar"));
+        assertEquals("PONG", pingFuture.sync().getNow());
+        assertTrue(setFuture.sync().getNow());
+        assertEquals("bar", toString(CLIENT.get(toBytes("foo")).sync().getNow()));
+        assertEquals(null, CLIENT.get(toBytes("bar")).sync().getNow());
+
+        Future<Long> incrFuture = CLIENT.incr(toBytes("num"));
+        Future<Long> incrByFuture = CLIENT.incrBy(toBytes("num"), 2L);
+        Future<Long> decrFuture = CLIENT.decr(toBytes("num"));
+        Future<Long> decrByFuture = CLIENT.decrBy(toBytes("num"), 2L);
+        assertEquals(1L, incrFuture.sync().getNow().longValue());
+        assertEquals(3L, incrByFuture.sync().getNow().longValue());
+        assertEquals(2L, decrFuture.sync().getNow().longValue());
+        assertEquals(0L, decrByFuture.sync().getNow().longValue());
+
+        CLIENT.mset(toBytes("a1"), toBytes("b1"), toBytes("a2"), toBytes("b2")).sync();
+
+        List<byte[]> resp = CLIENT.mget(toBytes("a1"), toBytes("a2"), toBytes("a3")).sync()
+                .getNow();
+        assertEquals(3, resp.size());
+        assertEquals("b1", toString(resp.get(0)));
+        assertEquals("b2", toString(resp.get(1)));
+        assertEquals(null, resp.get(2));
     }
 }

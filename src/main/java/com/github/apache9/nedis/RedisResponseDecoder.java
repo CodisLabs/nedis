@@ -93,7 +93,7 @@ public class RedisResponseDecoder extends ByteToMessageDecoder {
         return negative ? -l.longValue() : l.longValue();
     }
 
-    private boolean decode(ByteBuf in, List<Object> out) throws Exception {
+    private boolean decode(ByteBuf in, List<Object> out, Object nullValue) throws Exception {
         if (in.readableBytes() < 2) {
             return false;
         }
@@ -129,7 +129,7 @@ public class RedisResponseDecoder extends ByteToMessageDecoder {
                     return false;
                 }
                 if (numBytes.intValue() == -1) {
-                    out.add(NULL_REPLY);
+                    out.add(nullValue);
                     return true;
                 }
                 if (in.readableBytes() < numBytes.intValue() + 2) {
@@ -152,12 +152,12 @@ public class RedisResponseDecoder extends ByteToMessageDecoder {
                     return false;
                 }
                 if (numReplies.intValue() == -1) {
-                    out.add(NULL_REPLY);
+                    out.add(nullValue);
                     return true;
                 }
                 List<Object> replies = new ArrayList<>();
                 for (int i = 0; i < numReplies.intValue(); i++) {
-                    if (!decode(in, replies)) {
+                    if (!decode(in, replies, null)) {
                         return false;
                     }
                 }
@@ -172,7 +172,7 @@ public class RedisResponseDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         in.markReaderIndex();
-        if (!decode(in, out)) {
+        if (!decode(in, out, NULL_REPLY)) {
             in.resetReaderIndex();
         }
     }
