@@ -13,6 +13,8 @@ public interface NedisClientPool extends Closeable {
 
     void release(NedisClient client);
 
+    boolean exclusive();
+
     int numConns();
 
     int numPooledConns();

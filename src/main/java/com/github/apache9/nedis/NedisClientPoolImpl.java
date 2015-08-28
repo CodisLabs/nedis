@@ -266,6 +266,11 @@ public class NedisClientPoolImpl implements NedisClientPool {
     }
 
     @Override
+    public boolean exclusive() {
+        return exclusive;
+    }
+
+    @Override
     public int numConns() {
         synchronized (pool) {
             return numConns;
