@@ -9,6 +9,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
@@ -73,6 +74,10 @@ public class NedisClientPoolImpl implements NedisClientPool {
             }
 
         });
+        if (timeoutMs > 0) {
+            this.bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                    (int) Math.min(Integer.MAX_VALUE, timeoutMs));
+        }
         this.password = password;
         this.database = database;
         this.clientName = clientName;
