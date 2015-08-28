@@ -24,7 +24,15 @@ public class NedisUtils {
         return value.getBytes(StandardCharsets.UTF_8);
     }
 
-    public static byte[][] toParams(byte[][] tailParams, byte[]... headParams) {
+    public static String toString(byte[] value) {
+        return new String(value, StandardCharsets.UTF_8);
+    }
+
+    public static byte[][] toParamsReverse(byte[][] tailParams, byte[]... headParams) {
+        return toParams(headParams, tailParams);
+    }
+
+    public static byte[][] toParams(byte[][] headParams, byte[]... tailParams) {
         byte[][] params = Arrays.copyOf(headParams, headParams.length + tailParams.length);
         System.arraycopy(tailParams, 0, params, headParams.length, tailParams.length);
         return params;

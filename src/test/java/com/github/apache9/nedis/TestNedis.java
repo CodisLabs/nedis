@@ -1,14 +1,14 @@
 package com.github.apache9.nedis;
 
-import static org.junit.Assert.*;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import static com.github.apache9.nedis.NedisUtils.toBytes;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.concurrent.Future;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -25,60 +25,68 @@ public class TestNedis {
 
     private static RedisServer REDIS;
 
-    private static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup();
-
-    private static NedisClient CLIENT;
+    private static NedisClientPool POOL;
 
     @BeforeClass
     public static void setUp() throws IOException, InterruptedException {
         REDIS = new RedisServer(PORT);
         REDIS.start();
         Thread.sleep(2000);
-        CLIENT = NedisClientBuilder.builder().group(WORKER_GROUP).channel(NioSocketChannel.class)
-                .connect(new InetSocketAddress("127.0.0.1", PORT)).sync().getNow();
+        POOL = NedisClientPoolBuilder.builder()
+                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).build();
     }
 
     @AfterClass
     public static void tearDown() throws InterruptedException {
-        if (CLIENT != null) {
-            CLIENT.close().sync();
+        if (POOL != null) {
+            POOL.close();
         }
         REDIS.stop();
     }
 
-    private byte[] toBytes(String str) {
-        return str.getBytes(StandardCharsets.UTF_8);
-    }
-
-    private String toString(byte[] b) {
-        return new String(b, StandardCharsets.UTF_8);
-    }
-
     @Test
     public void test() throws InterruptedException, ExecutionException {
-        Future<String> pingFuture = CLIENT.ping();
-        Future<Boolean> setFuture = CLIENT.set(toBytes("foo"), toBytes("bar"));
+        NedisClient client = POOL.acquire().sync().getNow();
+        Future<String> pingFuture = client.ping();
+        Future<Boolean> setFuture = client.set(toBytes("foo"), toBytes("bar"));
         assertEquals("PONG", pingFuture.sync().getNow());
         assertTrue(setFuture.sync().getNow());
-        assertEquals("bar", toString(CLIENT.get(toBytes("foo")).sync().getNow()));
-        assertEquals(null, CLIENT.get(toBytes("bar")).sync().getNow());
+        assertEquals("bar", NedisUtils.toString(client.get(toBytes("foo")).sync().getNow()));
+        assertEquals(null, client.get(toBytes("bar")).sync().getNow());
 
-        Future<Long> incrFuture = CLIENT.incr(toBytes("num"));
-        Future<Long> incrByFuture = CLIENT.incrBy(toBytes("num"), 2L);
-        Future<Long> decrFuture = CLIENT.decr(toBytes("num"));
-        Future<Long> decrByFuture = CLIENT.decrBy(toBytes("num"), 2L);
+        Future<Long> incrFuture = client.incr(toBytes("num"));
+        Future<Long> incrByFuture = client.incrBy(toBytes("num"), 2L);
+        Future<Long> decrFuture = client.decr(toBytes("num"));
+        Future<Long> decrByFuture = client.decrBy(toBytes("num"), 2L);
         assertEquals(1L, incrFuture.sync().getNow().longValue());
         assertEquals(3L, incrByFuture.sync().getNow().longValue());
         assertEquals(2L, decrFuture.sync().getNow().longValue());
         assertEquals(0L, decrByFuture.sync().getNow().longValue());
 
-        CLIENT.mset(toBytes("a1"), toBytes("b1"), toBytes("a2"), toBytes("b2")).sync();
+        client.mset(toBytes("a1"), toBytes("b1"), toBytes("a2"), toBytes("b2")).sync();
 
-        List<byte[]> resp = CLIENT.mget(toBytes("a1"), toBytes("a2"), toBytes("a3")).sync()
+        List<byte[]> resp = client.mget(toBytes("a1"), toBytes("a2"), toBytes("a3")).sync()
                 .getNow();
         assertEquals(3, resp.size());
-        assertEquals("b1", toString(resp.get(0)));
-        assertEquals("b2", toString(resp.get(1)));
+        assertEquals("b1", NedisUtils.toString(resp.get(0)));
+        assertEquals("b2", NedisUtils.toString(resp.get(1)));
         assertEquals(null, resp.get(2));
+
+        assertEquals(1, POOL.numPooledConns());
+        assertEquals(1, POOL.numConns());
+    }
+
+    @Test
+    public void testTimeout() throws InterruptedException {
+        NedisClient client = POOL.acquire().sync().getNow();
+        assertEquals(1, POOL.numPooledConns());
+        assertEquals(1, POOL.numConns());
+        assertEquals(0L, client.setTimeout(100).sync().getNow().longValue());
+        Future<?> future = client.blpop(1, toBytes("foo")).await();
+        assertFalse(future.isSuccess());
+        assertTrue(future.cause() instanceof ReadTimeoutException);
+        Thread.sleep(1000);
+        assertEquals(0, POOL.numPooledConns());
+        assertEquals(0, POOL.numConns());
     }
 }
