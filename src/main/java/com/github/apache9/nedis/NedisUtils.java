@@ -11,9 +11,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+
+import com.github.apache9.nedis.protocol.BlockingListsCommands;
 
 /**
  * @author Apache9
@@ -68,22 +67,6 @@ public class NedisUtils {
                 return null;
             }
         }
-    }
-
-    private static final Set<Method> BLOCKING_OPS;
-
-    static {
-        Set<Method> blockingOps = new HashSet<Method>();
-        try {
-            blockingOps.add(NedisClient.class.getMethod("blpop", long.class, byte[][].class));
-            blockingOps.add(NedisClient.class.getMethod("brpop", long.class, byte[][].class));
-            blockingOps.add(NedisClient.class.getMethod("brpoplpush", byte[].class, byte[].class,
-                    long.class));
-        } catch (NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException(e);
-        }
-
-        BLOCKING_OPS = Collections.unmodifiableSet(blockingOps);
     }
 
     private static final class Invoker implements InvocationHandler {
@@ -180,7 +163,7 @@ public class NedisUtils {
                 @Override
                 public void operationComplete(Future<NedisClient> future) throws Exception {
                     if (future.isSuccess()) {
-                        if (BLOCKING_OPS.contains(method)) {
+                        if (method.getDeclaringClass().equals(BlockingListsCommands.class)) {
                             setInfiniteTimeout(future.getNow(), method, args, promise);
                         } else {
                             call(future.getNow(), method, args, promise);

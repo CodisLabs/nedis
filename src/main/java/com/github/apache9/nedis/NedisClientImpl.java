@@ -3,45 +3,44 @@ package com.github.apache9.nedis;
 import static com.github.apache9.nedis.NedisUtils.toBytes;
 import static com.github.apache9.nedis.NedisUtils.toParams;
 import static com.github.apache9.nedis.NedisUtils.toParamsReverse;
-import static com.github.apache9.nedis.RedisCommand.BLPOP;
-import static com.github.apache9.nedis.RedisCommand.BRPOP;
-import static com.github.apache9.nedis.RedisCommand.BRPOPLPUSH;
-import static com.github.apache9.nedis.RedisCommand.DECR;
-import static com.github.apache9.nedis.RedisCommand.DECRBY;
-import static com.github.apache9.nedis.RedisCommand.DEL;
-import static com.github.apache9.nedis.RedisCommand.ECHO;
-import static com.github.apache9.nedis.RedisCommand.EVAL;
-import static com.github.apache9.nedis.RedisCommand.EXISTS;
-import static com.github.apache9.nedis.RedisCommand.EXPIRE;
-import static com.github.apache9.nedis.RedisCommand.EXPIREAT;
-import static com.github.apache9.nedis.RedisCommand.GET;
-import static com.github.apache9.nedis.RedisCommand.INCR;
-import static com.github.apache9.nedis.RedisCommand.INCRBY;
-import static com.github.apache9.nedis.RedisCommand.INCRBYFLOAT;
-import static com.github.apache9.nedis.RedisCommand.LINDEX;
-import static com.github.apache9.nedis.RedisCommand.LINSERT;
-import static com.github.apache9.nedis.RedisCommand.LLEN;
-import static com.github.apache9.nedis.RedisCommand.LPOP;
-import static com.github.apache9.nedis.RedisCommand.LPUSH;
-import static com.github.apache9.nedis.RedisCommand.LPUSHX;
-import static com.github.apache9.nedis.RedisCommand.LRANGE;
-import static com.github.apache9.nedis.RedisCommand.LREM;
-import static com.github.apache9.nedis.RedisCommand.LSET;
-import static com.github.apache9.nedis.RedisCommand.LTRIM;
-import static com.github.apache9.nedis.RedisCommand.MGET;
-import static com.github.apache9.nedis.RedisCommand.MSET;
-import static com.github.apache9.nedis.RedisCommand.MSETNX;
-import static com.github.apache9.nedis.RedisCommand.PING;
-import static com.github.apache9.nedis.RedisCommand.QUIT;
-import static com.github.apache9.nedis.RedisCommand.RPOP;
-import static com.github.apache9.nedis.RedisCommand.RPOPLPUSH;
-import static com.github.apache9.nedis.RedisCommand.RPUSH;
-import static com.github.apache9.nedis.RedisCommand.RPUSHX;
-import static com.github.apache9.nedis.RedisCommand.SET;
-import static com.github.apache9.nedis.RedisKeyword.EX;
-import static com.github.apache9.nedis.RedisKeyword.NX;
-import static com.github.apache9.nedis.RedisKeyword.PX;
-import static com.github.apache9.nedis.RedisKeyword.XX;
+import static com.github.apache9.nedis.protocol.RedisCommand.BLPOP;
+import static com.github.apache9.nedis.protocol.RedisCommand.BRPOP;
+import static com.github.apache9.nedis.protocol.RedisCommand.BRPOPLPUSH;
+import static com.github.apache9.nedis.protocol.RedisCommand.DECR;
+import static com.github.apache9.nedis.protocol.RedisCommand.DECRBY;
+import static com.github.apache9.nedis.protocol.RedisCommand.DEL;
+import static com.github.apache9.nedis.protocol.RedisCommand.ECHO;
+import static com.github.apache9.nedis.protocol.RedisCommand.EVAL;
+import static com.github.apache9.nedis.protocol.RedisCommand.EXISTS;
+import static com.github.apache9.nedis.protocol.RedisCommand.EXPIRE;
+import static com.github.apache9.nedis.protocol.RedisCommand.EXPIREAT;
+import static com.github.apache9.nedis.protocol.RedisCommand.GET;
+import static com.github.apache9.nedis.protocol.RedisCommand.INCR;
+import static com.github.apache9.nedis.protocol.RedisCommand.INCRBY;
+import static com.github.apache9.nedis.protocol.RedisCommand.INCRBYFLOAT;
+import static com.github.apache9.nedis.protocol.RedisCommand.LINDEX;
+import static com.github.apache9.nedis.protocol.RedisCommand.LINSERT;
+import static com.github.apache9.nedis.protocol.RedisCommand.LLEN;
+import static com.github.apache9.nedis.protocol.RedisCommand.LPOP;
+import static com.github.apache9.nedis.protocol.RedisCommand.LPUSH;
+import static com.github.apache9.nedis.protocol.RedisCommand.LPUSHX;
+import static com.github.apache9.nedis.protocol.RedisCommand.LRANGE;
+import static com.github.apache9.nedis.protocol.RedisCommand.LREM;
+import static com.github.apache9.nedis.protocol.RedisCommand.LSET;
+import static com.github.apache9.nedis.protocol.RedisCommand.LTRIM;
+import static com.github.apache9.nedis.protocol.RedisCommand.MGET;
+import static com.github.apache9.nedis.protocol.RedisCommand.MSET;
+import static com.github.apache9.nedis.protocol.RedisCommand.MSETNX;
+import static com.github.apache9.nedis.protocol.RedisCommand.PING;
+import static com.github.apache9.nedis.protocol.RedisCommand.RPOP;
+import static com.github.apache9.nedis.protocol.RedisCommand.RPOPLPUSH;
+import static com.github.apache9.nedis.protocol.RedisCommand.RPUSH;
+import static com.github.apache9.nedis.protocol.RedisCommand.RPUSHX;
+import static com.github.apache9.nedis.protocol.RedisCommand.SET;
+import static com.github.apache9.nedis.protocol.RedisKeyword.EX;
+import static com.github.apache9.nedis.protocol.RedisKeyword.NX;
+import static com.github.apache9.nedis.protocol.RedisKeyword.PX;
+import static com.github.apache9.nedis.protocol.RedisKeyword.XX;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoop;
@@ -52,6 +51,8 @@ import io.netty.util.concurrent.Promise;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import com.github.apache9.nedis.protocol.RedisCommand;
 
 /**
  * @author zhangduo
@@ -452,11 +453,6 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<String> ping() {
         return execCmd(stringReplyCmdExecutorFactory, PING);
-    }
-
-    @Override
-    public Future<Void> quit() {
-        return execCmd(voidReplyCmdExecutorFactory, QUIT);
     }
 
     @Override

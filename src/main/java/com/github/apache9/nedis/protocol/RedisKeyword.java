@@ -1,4 +1,4 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.protocol;
 
 import java.nio.charset.StandardCharsets;
 
@@ -14,5 +14,4 @@ public enum RedisKeyword {
     RedisKeyword() {
         raw = name().getBytes(StandardCharsets.US_ASCII);
     }
-
 }

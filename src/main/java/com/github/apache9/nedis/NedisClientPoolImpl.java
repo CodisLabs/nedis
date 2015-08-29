@@ -1,9 +1,9 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.RedisCommand.AUTH;
-import static com.github.apache9.nedis.RedisCommand.CLIENT;
-import static com.github.apache9.nedis.RedisCommand.SELECT;
-import static com.github.apache9.nedis.RedisKeyword.SETNAME;
+import static com.github.apache9.nedis.protocol.RedisCommand.AUTH;
+import static com.github.apache9.nedis.protocol.RedisCommand.CLIENT;
+import static com.github.apache9.nedis.protocol.RedisCommand.SELECT;
+import static com.github.apache9.nedis.protocol.RedisKeyword.SETNAME;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
