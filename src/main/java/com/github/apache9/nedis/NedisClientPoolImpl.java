@@ -1,9 +1,5 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.protocol.RedisCommand.AUTH;
-import static com.github.apache9.nedis.protocol.RedisCommand.CLIENT;
-import static com.github.apache9.nedis.protocol.RedisCommand.SELECT;
-import static com.github.apache9.nedis.protocol.RedisKeyword.SETNAME;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -29,7 +25,7 @@ public class NedisClientPoolImpl implements NedisClientPool {
 
     private final byte[] password;
 
-    private final byte[] database;
+    private final int database;
 
     private final byte[] clientName;
 
@@ -46,7 +42,7 @@ public class NedisClientPoolImpl implements NedisClientPool {
     private boolean closed = false;
 
     public NedisClientPoolImpl(Bootstrap bootstrap, final long timeoutMs, byte[] password,
-            byte[] database, byte[] clientName, int maxPooledConns, boolean exclusive) {
+            int database, byte[] clientName, int maxPooledConns, boolean exclusive) {
         this.bootstrap = bootstrap.handler(new ChannelInitializer<Channel>() {
 
             @Override
@@ -69,15 +65,15 @@ public class NedisClientPoolImpl implements NedisClientPool {
         this.closePromise = bootstrap.group().next().newPromise();
     }
 
-    private final class InitializeFutureListener implements FutureListener<Object> {
+    private final class InitializeFutureListener implements FutureListener<Void> {
 
         private final Promise<NedisClient> promise;
 
-        private final NedisClient client;
+        private final NedisClientImpl client;
 
         private final State nextState;
 
-        public InitializeFutureListener(Promise<NedisClient> promise, NedisClient client,
+        public InitializeFutureListener(Promise<NedisClient> promise, NedisClientImpl client,
                 State nextState) {
             this.promise = promise;
             this.client = client;
@@ -85,15 +81,9 @@ public class NedisClientPoolImpl implements NedisClientPool {
         }
 
         @Override
-        public void operationComplete(Future<Object> future) throws Exception {
+        public void operationComplete(Future<Void> future) throws Exception {
             if (future.isSuccess()) {
-                Object resp = future.getNow();
-                if (resp instanceof RedisResponseException) {
-                    promise.tryFailure((RedisResponseException) resp);
-                    client.close();
-                } else {
-                    initialize(promise, client, nextState);
-                }
+                initialize(promise, client, nextState);
             } else {
                 promise.tryFailure(future.cause());
                 client.close();
@@ -106,22 +96,22 @@ public class NedisClientPoolImpl implements NedisClientPool {
         AUTH, SELECT, CLIENT_SETNAME, FINISH
     }
 
-    private void initialize(final Promise<NedisClient> promise, final NedisClient client,
+    private void initialize(final Promise<NedisClient> promise, final NedisClientImpl client,
             State state) {
         switch (state) {
             case AUTH:
                 if (password == null) {
                     initialize(promise, client, State.SELECT);
                 } else {
-                    client.execCmd(AUTH.raw, password).addListener(
+                    client.auth0(password).addListener(
                             new InitializeFutureListener(promise, client, State.SELECT));
                 }
                 break;
             case SELECT:
-                if (database == null) {
+                if (database == 0) {
                     initialize(promise, client, State.CLIENT_SETNAME);
                 } else {
-                    client.execCmd(SELECT.raw, database).addListener(
+                    client.select0(database).addListener(
                             new InitializeFutureListener(promise, client, State.CLIENT_SETNAME));
                 }
                 break;
@@ -129,7 +119,7 @@ public class NedisClientPoolImpl implements NedisClientPool {
                 if (clientName == null) {
                     promise.trySuccess(client);
                 } else {
-                    client.execCmd(CLIENT.raw, SETNAME.raw, clientName).addListener(
+                    client.clientSetname0(clientName).addListener(
                             new InitializeFutureListener(promise, client, State.FINISH));
                 }
             case FINISH:

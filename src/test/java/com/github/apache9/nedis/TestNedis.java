@@ -63,7 +63,7 @@ public class TestNedis {
     @Test
     public void test() throws InterruptedException, ExecutionException {
         pool = NedisClientPoolBuilder.builder()
-                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).build();
+                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).clientName("test").build();
         NedisClient client = NedisUtils.newPooledClient(pool);
         System.out.println(client.toString());
         Future<String> pingFuture = client.ping();
@@ -114,7 +114,7 @@ public class TestNedis {
     @Test
     public void testTimeout() throws InterruptedException {
         pool = NedisClientPoolBuilder.builder()
-                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).build();
+                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).database(1).build();
         NedisClient client = pool.acquire().sync().getNow();
         assertEquals(1, pool.numPooledConns());
         assertEquals(1, pool.numConns());

@@ -36,7 +36,7 @@ public class NedisClientPoolBuilder {
 
     private byte[] password;
 
-    private byte[] database;
+    private int database;
 
     private byte[] clientName;
 
@@ -68,7 +68,7 @@ public class NedisClientPoolBuilder {
     }
 
     public NedisClientPoolBuilder database(int database) {
-        this.database = toBytes(database);
+        this.database = database;
         return this;
     }
 

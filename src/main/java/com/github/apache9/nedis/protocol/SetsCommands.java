@@ -13,13 +13,13 @@ public interface SetsCommands {
 
     Future<Long> scard(byte[] key);
 
-    Future<List<byte[]>> sdiff(byte[] key, byte[]... keys);
+    Future<List<byte[]>> sdiff(byte[]... keys);
 
-    Future<Long> sdiffstore(byte[] dst, byte[] key, byte[]... keys);
+    Future<Long> sdiffstore(byte[] dst, byte[]... keys);
 
-    Future<List<byte[]>> sinter(byte[] key, byte[]... keys);
+    Future<List<byte[]>> sinter(byte[]... keys);
 
-    Future<Long> sinterstore(byte[] dst, byte[] key, byte[]... keys);
+    Future<Long> sinterstore(byte[] dst, byte[]... keys);
 
     Future<Boolean> sismember(byte[] key, byte[] member);
 
@@ -33,10 +33,10 @@ public interface SetsCommands {
 
     Future<List<byte[]>> srandmember(byte[] key, long count);
 
-    Future<Long> srem(byte[] key, byte[] member, byte[]... members);
+    Future<Long> srem(byte[] key, byte[]... members);
 
-    Future<List<byte[]>> sunion(byte[] key, byte[]... keys);
+    Future<List<byte[]>> sunion(byte[]... keys);
 
-    Future<Long> sunionstore(byte[] dst, byte[] key, byte[]... keys);
+    Future<Long> sunionstore(byte[] dst, byte[]... keys);
 
 }

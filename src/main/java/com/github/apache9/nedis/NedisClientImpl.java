@@ -3,72 +3,8 @@ package com.github.apache9.nedis;
 import static com.github.apache9.nedis.NedisUtils.toBytes;
 import static com.github.apache9.nedis.NedisUtils.toParams;
 import static com.github.apache9.nedis.NedisUtils.toParamsReverse;
-import static com.github.apache9.nedis.protocol.RedisCommand.BLPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.BRPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.BRPOPLPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.DECR;
-import static com.github.apache9.nedis.protocol.RedisCommand.DECRBY;
-import static com.github.apache9.nedis.protocol.RedisCommand.DEL;
-import static com.github.apache9.nedis.protocol.RedisCommand.DUMP;
-import static com.github.apache9.nedis.protocol.RedisCommand.ECHO;
-import static com.github.apache9.nedis.protocol.RedisCommand.EVAL;
-import static com.github.apache9.nedis.protocol.RedisCommand.EXISTS;
-import static com.github.apache9.nedis.protocol.RedisCommand.EXPIRE;
-import static com.github.apache9.nedis.protocol.RedisCommand.EXPIREAT;
-import static com.github.apache9.nedis.protocol.RedisCommand.GET;
-import static com.github.apache9.nedis.protocol.RedisCommand.INCR;
-import static com.github.apache9.nedis.protocol.RedisCommand.INCRBY;
-import static com.github.apache9.nedis.protocol.RedisCommand.INCRBYFLOAT;
-import static com.github.apache9.nedis.protocol.RedisCommand.KEYS;
-import static com.github.apache9.nedis.protocol.RedisCommand.LINDEX;
-import static com.github.apache9.nedis.protocol.RedisCommand.LINSERT;
-import static com.github.apache9.nedis.protocol.RedisCommand.LLEN;
-import static com.github.apache9.nedis.protocol.RedisCommand.LPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.LPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.LPUSHX;
-import static com.github.apache9.nedis.protocol.RedisCommand.LRANGE;
-import static com.github.apache9.nedis.protocol.RedisCommand.LREM;
-import static com.github.apache9.nedis.protocol.RedisCommand.LSET;
-import static com.github.apache9.nedis.protocol.RedisCommand.LTRIM;
-import static com.github.apache9.nedis.protocol.RedisCommand.MGET;
-import static com.github.apache9.nedis.protocol.RedisCommand.MOVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.MSET;
-import static com.github.apache9.nedis.protocol.RedisCommand.MSETNX;
-import static com.github.apache9.nedis.protocol.RedisCommand.PERSIST;
-import static com.github.apache9.nedis.protocol.RedisCommand.PEXPIRE;
-import static com.github.apache9.nedis.protocol.RedisCommand.PEXPIREAT;
-import static com.github.apache9.nedis.protocol.RedisCommand.PING;
-import static com.github.apache9.nedis.protocol.RedisCommand.PTTL;
-import static com.github.apache9.nedis.protocol.RedisCommand.RANDOMKEY;
-import static com.github.apache9.nedis.protocol.RedisCommand.RENAME;
-import static com.github.apache9.nedis.protocol.RedisCommand.RENAMENX;
-import static com.github.apache9.nedis.protocol.RedisCommand.RESTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPOPLPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPUSHX;
-import static com.github.apache9.nedis.protocol.RedisCommand.SADD;
-import static com.github.apache9.nedis.protocol.RedisCommand.SCARD;
-import static com.github.apache9.nedis.protocol.RedisCommand.SDIFF;
-import static com.github.apache9.nedis.protocol.RedisCommand.SDIFFSTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SET;
-import static com.github.apache9.nedis.protocol.RedisCommand.SINTER;
-import static com.github.apache9.nedis.protocol.RedisCommand.SINTERSTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SISMEMBER;
-import static com.github.apache9.nedis.protocol.RedisCommand.SMEMBERS;
-import static com.github.apache9.nedis.protocol.RedisCommand.SMOVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.SRANDMEMBER;
-import static com.github.apache9.nedis.protocol.RedisCommand.SREM;
-import static com.github.apache9.nedis.protocol.RedisCommand.SUNION;
-import static com.github.apache9.nedis.protocol.RedisCommand.SUNIONSTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.TTL;
-import static com.github.apache9.nedis.protocol.RedisCommand.TYPE;
-import static com.github.apache9.nedis.protocol.RedisKeyword.EX;
-import static com.github.apache9.nedis.protocol.RedisKeyword.NX;
-import static com.github.apache9.nedis.protocol.RedisKeyword.PX;
-import static com.github.apache9.nedis.protocol.RedisKeyword.REPLACE;
-import static com.github.apache9.nedis.protocol.RedisKeyword.XX;
+import static com.github.apache9.nedis.protocol.RedisCommand.*;
+import static com.github.apache9.nedis.protocol.RedisKeyword.*;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoop;
@@ -79,6 +15,8 @@ import io.netty.util.concurrent.Promise;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import javax.naming.OperationNotSupportedException;
 
 import com.github.apache9.nedis.handler.RedisDuplexHandler;
 import com.github.apache9.nedis.handler.RedisResponseDecoder;
@@ -309,6 +247,21 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
+    public Future<Void> auth(byte[] password) {
+        if (pool != null) {
+            Promise<Void> promise = eventLoop().newPromise();
+            promise.tryFailure(new OperationNotSupportedException(
+                    "'auth' is not allowed on a pooled connection"));
+            return promise;
+        }
+        return auth0(password);
+    }
+
+    Future<Void> auth0(byte[] password) {
+        return execCmd(voidReplyCmdExecutorFactory, AUTH, password);
+    }
+
+    @Override
     public Future<List<byte[]>> blpop(long timeoutSeconds, byte[]... keys) {
         return execCmd(arrayReplyCmdExecutorFactory, BLPOP, toParams(keys, toBytes(timeoutSeconds)));
     }
@@ -321,6 +274,21 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<byte[]> brpoplpush(byte[] src, byte[] dst, long timeoutSeconds) {
         return execCmd(bytesReplyCmdExecutorFactory, BRPOPLPUSH, src, dst, toBytes(timeoutSeconds));
+    }
+
+    @Override
+    public Future<Void> clientSetname(byte[] name) {
+        if (pool != null && !pool.exclusive()) {
+            Promise<Void> promise = eventLoop().newPromise();
+            promise.tryFailure(new OperationNotSupportedException(
+                    "'client setname' is not allowed on a shared pooled connection"));
+            return promise;
+        }
+        return clientSetname0(name);
+    }
+
+    Future<Void> clientSetname0(byte[] name) {
+        return execCmd(voidReplyCmdExecutorFactory, CLIENT, SETNAME.raw, name);
     }
 
     @Override
@@ -540,6 +508,21 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
+    public Future<Void> quit() {
+        if (pool != null) {
+            Promise<Void> promise = eventLoop().newPromise();
+            promise.tryFailure(new OperationNotSupportedException(
+                    "'quit' is not allowed on a pooled connection"));
+            return promise;
+        }
+        return quit0();
+    }
+
+    Future<Void> quit0() {
+        return execCmd(voidReplyCmdExecutorFactory, QUIT);
+    }
+
+    @Override
     public Future<byte[]> randomkey() {
         return execCmd(bytesReplyCmdExecutorFactory, RANDOMKEY);
     }
@@ -603,13 +586,28 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<List<byte[]>> sdiff(byte[] key, byte[]... keys) {
-        return execCmd(arrayReplyCmdExecutorFactory, SDIFF, toParamsReverse(keys, key));
+    public Future<List<byte[]>> sdiff(byte[]... keys) {
+        return execCmd(arrayReplyCmdExecutorFactory, SDIFF, keys);
     }
 
     @Override
-    public Future<Long> sdiffstore(byte[] dst, byte[] key, byte[]... keys) {
-        return execCmd(longReplyCmdExecutorFactory, SDIFFSTORE, toParamsReverse(keys, dst, key));
+    public Future<Long> sdiffstore(byte[] dst, byte[]... keys) {
+        return execCmd(longReplyCmdExecutorFactory, SDIFFSTORE, toParamsReverse(keys, dst));
+    }
+
+    @Override
+    public Future<Void> select(int index) {
+        if (pool != null && !pool.exclusive()) {
+            Promise<Void> promise = eventLoop().newPromise();
+            promise.tryFailure(new OperationNotSupportedException(
+                    "'select' is not allowed on a shared pooled connection"));
+            return promise;
+        }
+        return select0(index);
+    }
+
+    Future<Void> select0(int index) {
+        return execCmd(voidReplyCmdExecutorFactory, SELECT, toBytes(index));
     }
 
     @Override
@@ -681,13 +679,13 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<List<byte[]>> sinter(byte[] key, byte[]... keys) {
-        return execCmd(arrayReplyCmdExecutorFactory, SINTER, toParamsReverse(keys, key));
+    public Future<List<byte[]>> sinter(byte[]... keys) {
+        return execCmd(arrayReplyCmdExecutorFactory, SINTER, keys);
     }
 
     @Override
-    public Future<Long> sinterstore(byte[] dst, byte[] key, byte[]... keys) {
-        return execCmd(longReplyCmdExecutorFactory, SINTERSTORE, toParamsReverse(keys, dst, key));
+    public Future<Long> sinterstore(byte[] dst, byte[]... keys) {
+        return execCmd(longReplyCmdExecutorFactory, SINTERSTORE, toParamsReverse(keys, dst));
     }
 
     @Override
@@ -721,18 +719,18 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Long> srem(byte[] key, byte[] member, byte[]... members) {
-        return execCmd(longReplyCmdExecutorFactory, SREM, toParamsReverse(members, member));
+    public Future<Long> srem(byte[] key, byte[]... members) {
+        return execCmd(longReplyCmdExecutorFactory, SREM, members);
     }
 
     @Override
-    public Future<List<byte[]>> sunion(byte[] key, byte[]... keys) {
-        return execCmd(arrayReplyCmdExecutorFactory, SUNION, toParamsReverse(keys, key));
+    public Future<List<byte[]>> sunion(byte[]... keys) {
+        return execCmd(arrayReplyCmdExecutorFactory, SUNION, keys);
     }
 
     @Override
-    public Future<Long> sunionstore(byte[] dst, byte[] key, byte[]... keys) {
-        return execCmd(longReplyCmdExecutorFactory, SUNIONSTORE, toParamsReverse(keys, dst, key));
+    public Future<Long> sunionstore(byte[] dst, byte[]... keys) {
+        return execCmd(longReplyCmdExecutorFactory, SUNIONSTORE, toParamsReverse(keys, dst));
     }
 
     @Override

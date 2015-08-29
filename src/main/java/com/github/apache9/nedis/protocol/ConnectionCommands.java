@@ -7,7 +7,13 @@ import io.netty.util.concurrent.Future;
  */
 public interface ConnectionCommands {
 
+    Future<Void> auth(byte[] password);
+
     Future<byte[]> echo(byte[] msg);
 
     Future<String> ping();
+
+    Future<Void> quit();
+
+    Future<Void> select(int index);
 }
