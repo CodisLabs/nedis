@@ -1,13 +1,11 @@
 package com.github.apache9.nedis;
 
-import java.io.Closeable;
-
 import io.netty.util.concurrent.Future;
 
 /**
  * @author Apache9
  */
-public interface NedisClientPool extends Closeable {
+public interface NedisClientPool extends AsyncCloseable {
 
     Future<NedisClient> acquire();
 
@@ -18,7 +16,4 @@ public interface NedisClientPool extends Closeable {
     int numConns();
 
     int numPooledConns();
-
-    @Override
-    void close();
 }

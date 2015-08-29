@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
  */
 public enum RedisKeyword {
 
-    EX, NX, PX, SETNAME, XX;
+    EX, NX, PX, SETNAME, XX, REPLACE, MATCH, COUNT;
 
     public final byte[] raw;
 

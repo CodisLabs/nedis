@@ -14,8 +14,11 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 
-import java.util.LinkedHashSet;
 import java.util.concurrent.TimeUnit;
+
+import com.github.apache9.nedis.handler.RedisDuplexHandler;
+import com.github.apache9.nedis.handler.RedisRequestEncoder;
+import com.github.apache9.nedis.handler.RedisResponseDecoder;
 
 /**
  * @author Apache9
@@ -34,30 +37,9 @@ public class NedisClientPoolImpl implements NedisClientPool {
 
     private final boolean exclusive;
 
-    private static final class NedisClientWrapper {
+    private final NedisClientHashSet pool;
 
-        public final NedisClient client;
-
-        public NedisClientWrapper(NedisClient client) {
-            this.client = client;
-        }
-
-        @Override
-        public final int hashCode() {
-            return System.identityHashCode(client);
-        }
-
-        @Override
-        public final boolean equals(Object obj) {
-            if (obj.getClass() != NedisClientWrapper.class) {
-                return false;
-            }
-            return client == ((NedisClientWrapper) obj).client;
-        }
-
-    }
-
-    private final LinkedHashSet<NedisClientWrapper> pool = new LinkedHashSet<>();
+    private final Promise<Void> closePromise;
 
     private int numConns;
 
@@ -83,6 +65,8 @@ public class NedisClientPoolImpl implements NedisClientPool {
         this.clientName = clientName;
         this.maxPooledConns = maxPooledConns;
         this.exclusive = exclusive;
+        this.pool = new NedisClientHashSet(maxPooledConns);
+        this.closePromise = bootstrap.group().next().newPromise();
     }
 
     private final class InitializeFutureListener implements FutureListener<Object> {
@@ -162,7 +146,8 @@ public class NedisClientPoolImpl implements NedisClientPool {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
-                    initialize(promise, new NedisClientImpl(future.channel()), State.AUTH);
+                    initialize(promise, new NedisClientImpl(future.channel(),
+                            NedisClientPoolImpl.this), State.AUTH);
                 } else {
                     promise.tryFailure(future.cause());
                 }
@@ -189,8 +174,11 @@ public class NedisClientPoolImpl implements NedisClientPool {
                         @Override
                         public void operationComplete(Future<Void> future) throws Exception {
                             synchronized (pool) {
-                                pool.remove(new NedisClientWrapper(client));
+                                pool.remove(client);
                                 numConns--;
+                                if (closed && numConns == 0) {
+                                    closePromise.trySuccess(null);
+                                }
                             }
                         }
 
@@ -217,12 +205,9 @@ public class NedisClientPoolImpl implements NedisClientPool {
                 return newClient().addListener(new AcquireFutureListener(exclusive));
             }
             if (!pool.isEmpty()) {
-                NedisClientWrapper wrapper = pool.iterator().next();
-                Promise<NedisClient> promise = wrapper.client.eventLoop().newPromise();
-                promise.setSuccess(wrapper.client);
-                if (exclusive) {
-                    pool.remove(wrapper);
-                }
+                NedisClient client = pool.head(exclusive);
+                Promise<NedisClient> promise = client.eventLoop().newPromise();
+                promise.setSuccess(client);
                 return promise;
             }
             numConns++;
@@ -235,12 +220,11 @@ public class NedisClientPoolImpl implements NedisClientPool {
             client.close();
             return;
         }
-        NedisClientWrapper wrapper = new NedisClientWrapper(client);
-        if (pool.contains(wrapper)) {
+        if (pool.contains(client)) {
             return;
         }
         if (pool.size() < maxPooledConns) {
-            pool.add(wrapper);
+            pool.add(client);
         } else {
             client.close();
         }
@@ -256,13 +240,19 @@ public class NedisClientPoolImpl implements NedisClientPool {
     }
 
     @Override
-    public void close() {
+    public Future<Void> close() {
+        NedisClient[] toClose;
         synchronized (pool) {
-            closed = true;
-            for (NedisClientWrapper wrapper: pool) {
-                wrapper.client.close();
+            if (closed) {
+                return closePromise;
             }
+            closed = true;
+            toClose = pool.toArray();
         }
+        for (NedisClient client: toClose) {
+            client.close();
+        }
+        return closePromise;
     }
 
     @Override
@@ -282,6 +272,11 @@ public class NedisClientPoolImpl implements NedisClientPool {
         synchronized (pool) {
             return pool.size();
         }
+    }
+
+    @Override
+    public Future<Void> closeFuture() {
+        return closePromise;
     }
 
 }

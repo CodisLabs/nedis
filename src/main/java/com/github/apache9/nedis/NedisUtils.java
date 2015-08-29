@@ -12,6 +12,8 @@ import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import javax.naming.OperationNotSupportedException;
+
 import com.github.apache9.nedis.protocol.BlockingListsCommands;
 
 /**
@@ -35,7 +37,7 @@ public class NedisUtils {
         return value.getBytes(StandardCharsets.UTF_8);
     }
 
-    public static String toString(byte[] value) {
+    public static String bytesToString(byte[] value) {
         return new String(value, StandardCharsets.UTF_8);
     }
 
@@ -82,8 +84,8 @@ public class NedisUtils {
 
                 @Override
                 public void operationComplete(Future<Long> future) throws Exception {
-                    if (future.getNow() != null && pool.exclusive()) {
-                        pool.release(client);
+                    if (future.getNow() != null) {
+                        client.release();
                     }
                 }
 
@@ -141,9 +143,7 @@ public class NedisUtils {
                     } else {
                         promise.tryFailure(future.cause());
                     }
-                    if (pool.exclusive()) {
-                        pool.release(client);
-                    }
+                    client.release();
                 }
             });
         }
@@ -154,6 +154,13 @@ public class NedisUtils {
             // delegate Object methods like toString, hashCode, etc.
             if (method.getDeclaringClass().equals(Object.class)) {
                 return method.invoke(this, args);
+            }
+            if (method.getDeclaringClass().equals(AsyncCloseable.class)) {
+                return method.invoke(pool, args);
+            }
+            if (method.getDeclaringClass().equals(ConnectionManagement.class)) {
+                throw new OperationNotSupportedException(
+                        "Can not call connection related methods on pooled client");
             }
             Future<NedisClient> clientFuture = pool.acquire();
             @SuppressWarnings("rawtypes")

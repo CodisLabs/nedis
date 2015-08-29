@@ -1,4 +1,4 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.handler;
 
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
@@ -13,6 +13,8 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import com.github.apache9.nedis.RedisRequest;
 
 /**
  * @author Apache9

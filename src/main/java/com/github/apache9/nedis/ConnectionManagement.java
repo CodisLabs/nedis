@@ -1,13 +1,12 @@
 package com.github.apache9.nedis;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.Future;
 
 /**
  * @author Apache9
  */
-public interface ConnectionManagement {
+public interface ConnectionManagement extends AsyncCloseable {
     /**
      * return previous timeout value. Possible null if the client is already closed.
      */
@@ -17,7 +16,5 @@ public interface ConnectionManagement {
 
     boolean isOpen();
 
-    ChannelFuture closeFuture();
-
-    ChannelFuture close();
+    void release();
 }

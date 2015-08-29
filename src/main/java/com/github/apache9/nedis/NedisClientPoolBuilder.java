@@ -82,7 +82,7 @@ public class NedisClientPoolBuilder {
         return this;
     }
 
-    public NedisClientPoolBuilder maxPooledConns(boolean exclusive) {
+    public NedisClientPoolBuilder exclusive(boolean exclusive) {
         this.exclusive = exclusive;
         return this;
     }

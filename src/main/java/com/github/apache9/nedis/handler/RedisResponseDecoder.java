@@ -1,4 +1,4 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.handler;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
@@ -11,6 +11,8 @@ import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
+
+import com.github.apache9.nedis.RedisResponseException;
 
 /**
  * @author zhangduo

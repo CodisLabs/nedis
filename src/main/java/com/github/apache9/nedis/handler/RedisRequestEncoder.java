@@ -4,7 +4,7 @@
  * Copyright (c) 2015, Wandou Labs and/or its affiliates. All rights reserved.
  * WANDOU LABS PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.handler;
 
 import java.nio.charset.StandardCharsets;
 
