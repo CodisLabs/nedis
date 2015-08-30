@@ -7,11 +7,11 @@ import java.nio.charset.StandardCharsets;
  */
 public enum RedisKeyword {
 
-    EX, NX, PX, SETNAME, XX, REPLACE, MATCH, COUNT;
+    COUNT, EX, GETNAME, MATCH, NX, PX, REPLACE, SETNAME, XX, KILL, LIST, GET, RESETSTAT, REWRITE, SET;
 
     public final byte[] raw;
 
     RedisKeyword() {
-        raw = name().getBytes(StandardCharsets.US_ASCII);
+        raw = name().getBytes(StandardCharsets.UTF_8);
     }
 }

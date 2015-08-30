@@ -16,5 +16,8 @@ import com.github.apache9.nedis.protocol.StringsCommands;
 public interface NedisClient extends ConnectionManagement, ConnectionCommands, KeysCommands,
         StringsCommands, ScriptingCommands, ListsCommands, SetsCommands, ServerCommands {
 
+    /**
+     * General method to execute a redis command.
+     */
     Future<Object> execCmd(byte[] cmd, byte[]... params);
 }
