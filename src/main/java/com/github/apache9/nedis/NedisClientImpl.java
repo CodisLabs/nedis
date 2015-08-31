@@ -828,4 +828,19 @@ public class NedisClientImpl implements NedisClient {
     public Future<String> type(byte[] key) {
         return execCmd(stringConverter, TYPE, key);
     }
+
+    @Override
+    public Future<Boolean> pfadd(byte[] key, byte[]... elements) {
+        return execCmd(booleanConverter, PFADD, toParamsReverse(elements, key));
+    }
+
+    @Override
+    public Future<Long> pfcount(byte[]... keys) {
+        return execCmd(longConverter, PFCOUNT, keys);
+    }
+
+    @Override
+    public Future<Void> pfmerge(byte[] dst, byte[]... keys) {
+        return execCmd(voidConverter, PFMERGE, toParamsReverse(keys, dst));
+    }
 }

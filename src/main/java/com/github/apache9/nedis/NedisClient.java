@@ -4,6 +4,7 @@ import io.netty.util.concurrent.Future;
 
 import com.github.apache9.nedis.protocol.ConnectionCommands;
 import com.github.apache9.nedis.protocol.HashesCommands;
+import com.github.apache9.nedis.protocol.HyperLogLogCommands;
 import com.github.apache9.nedis.protocol.KeysCommands;
 import com.github.apache9.nedis.protocol.ListsCommands;
 import com.github.apache9.nedis.protocol.ScriptingCommands;
@@ -16,7 +17,7 @@ import com.github.apache9.nedis.protocol.StringsCommands;
  */
 public interface NedisClient extends ConnectionManagement, ConnectionCommands, KeysCommands,
         StringsCommands, ScriptingCommands, ListsCommands, SetsCommands, ServerCommands,
-        HashesCommands {
+        HashesCommands, HyperLogLogCommands {
 
     /**
      * General method to execute a redis command.
