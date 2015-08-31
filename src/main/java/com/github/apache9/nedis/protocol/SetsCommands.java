@@ -9,7 +9,7 @@ import io.netty.util.concurrent.Future;
  */
 public interface SetsCommands {
 
-    Future<Long> sadd(byte[] key, byte[] member, byte[]... members);
+    Future<Long> sadd(byte[] key, byte[]... members);
 
     Future<Long> scard(byte[] key);
 
@@ -34,6 +34,8 @@ public interface SetsCommands {
     Future<List<byte[]>> srandmember(byte[] key, long count);
 
     Future<Long> srem(byte[] key, byte[]... members);
+
+    Future<ScanResult<byte[]>> sscan(byte[] key, ScanParams params);
 
     Future<List<byte[]>> sunion(byte[]... keys);
 

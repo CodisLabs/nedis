@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import com.github.apache9.nedis.handler.RedisDuplexHandler;
 import com.github.apache9.nedis.handler.RedisRequestEncoder;
 import com.github.apache9.nedis.handler.RedisResponseDecoder;
+import com.github.apache9.nedis.util.NedisClientHashSet;
 
 /**
  * @author Apache9

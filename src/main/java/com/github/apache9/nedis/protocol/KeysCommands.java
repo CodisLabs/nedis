@@ -41,6 +41,8 @@ public interface KeysCommands {
 
     Future<Void> restore(byte[] key, int ttlMs, byte[] serializedValue, boolean replace);
 
+    Future<ScanResult<byte[]>> scan(ScanParams params);
+
     Future<Long> ttl(byte[] key);
 
     Future<String> type(byte[] key);

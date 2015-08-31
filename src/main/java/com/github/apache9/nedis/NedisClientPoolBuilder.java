@@ -1,6 +1,6 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.NedisUtils.toBytes;
+import static com.github.apache9.nedis.util.NedisUtils.toBytes;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;

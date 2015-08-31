@@ -5,13 +5,13 @@ import java.nio.charset.StandardCharsets;
 /**
  * @author Apache9
  */
-public enum RedisKeyword {
+public enum BitOp {
 
-    COUNT, EX, GET, GETNAME, KILL, LIST, MATCH, NX, PX, REPLACE, RESETSTAT, REWRITE, SET, SETNAME, XX;
+    AND, OR, XOR, NOT;
 
     public final byte[] raw;
 
-    RedisKeyword() {
+    private BitOp() {
         raw = name().getBytes(StandardCharsets.UTF_8);
     }
 }

@@ -1,8 +1,11 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.NedisUtils.bytesToString;
-import static com.github.apache9.nedis.NedisUtils.toBytes;
+import static com.github.apache9.nedis.TestUtils.cleanRedis;
+import static com.github.apache9.nedis.TestUtils.probeFreePort;
+import static com.github.apache9.nedis.TestUtils.waitUntilRedisUp;
 import static com.github.apache9.nedis.protocol.RedisCommand.GET;
+import static com.github.apache9.nedis.util.NedisUtils.bytesToString;
+import static com.github.apache9.nedis.util.NedisUtils.toBytes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,12 +22,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.github.apache9.nedis.util.NedisUtils;
+
 /**
  * @author Apache9
  */
 public class TestNedis {
 
-    private static int PORT = 13475;
+    private static int PORT;
 
     private static RedisServer REDIS;
 
@@ -32,9 +37,10 @@ public class TestNedis {
 
     @BeforeClass
     public static void setUp() throws IOException, InterruptedException {
+        PORT = probeFreePort();
         REDIS = new RedisServer(PORT);
         REDIS.start();
-        Thread.sleep(2000);
+        waitUntilRedisUp(PORT);
     }
 
     @AfterClass
@@ -42,22 +48,12 @@ public class TestNedis {
         REDIS.stop();
     }
 
-    private static void cleanRedis() throws InterruptedException {
-        NedisClientPool p = NedisClientPoolBuilder.builder()
-                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).build();
-        List<byte[]> allKeys = p.acquire().sync().getNow().keys(toBytes("*")).sync().getNow();
-        if (!allKeys.isEmpty()) {
-            p.acquire().sync().getNow().del(allKeys.toArray(new byte[0][])).sync();
-        }
-        p.close();
-    }
-
     @After
     public void tearDown() throws InterruptedException {
         if (pool != null) {
             pool.close();
         }
-        cleanRedis();
+        cleanRedis(PORT);
     }
 
     @Test

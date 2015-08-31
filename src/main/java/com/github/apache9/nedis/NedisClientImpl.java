@@ -1,90 +1,12 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.NedisUtils.toBytes;
-import static com.github.apache9.nedis.NedisUtils.toParams;
-import static com.github.apache9.nedis.NedisUtils.toParamsReverse;
-import static com.github.apache9.nedis.protocol.RedisCommand.AUTH;
-import static com.github.apache9.nedis.protocol.RedisCommand.BGREWRITEAOF;
-import static com.github.apache9.nedis.protocol.RedisCommand.BGSAVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.BLPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.BRPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.BRPOPLPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.CLIENT;
-import static com.github.apache9.nedis.protocol.RedisCommand.CONFIG;
-import static com.github.apache9.nedis.protocol.RedisCommand.DBSIZE;
-import static com.github.apache9.nedis.protocol.RedisCommand.DECR;
-import static com.github.apache9.nedis.protocol.RedisCommand.DECRBY;
-import static com.github.apache9.nedis.protocol.RedisCommand.DEL;
-import static com.github.apache9.nedis.protocol.RedisCommand.DUMP;
-import static com.github.apache9.nedis.protocol.RedisCommand.ECHO;
-import static com.github.apache9.nedis.protocol.RedisCommand.EVAL;
-import static com.github.apache9.nedis.protocol.RedisCommand.EXISTS;
-import static com.github.apache9.nedis.protocol.RedisCommand.EXPIRE;
-import static com.github.apache9.nedis.protocol.RedisCommand.EXPIREAT;
-import static com.github.apache9.nedis.protocol.RedisCommand.FLUSHALL;
-import static com.github.apache9.nedis.protocol.RedisCommand.FLUSHDB;
-import static com.github.apache9.nedis.protocol.RedisCommand.GET;
-import static com.github.apache9.nedis.protocol.RedisCommand.INCR;
-import static com.github.apache9.nedis.protocol.RedisCommand.INCRBY;
-import static com.github.apache9.nedis.protocol.RedisCommand.INCRBYFLOAT;
-import static com.github.apache9.nedis.protocol.RedisCommand.INFO;
-import static com.github.apache9.nedis.protocol.RedisCommand.KEYS;
-import static com.github.apache9.nedis.protocol.RedisCommand.LASTSAVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.LINDEX;
-import static com.github.apache9.nedis.protocol.RedisCommand.LINSERT;
-import static com.github.apache9.nedis.protocol.RedisCommand.LLEN;
-import static com.github.apache9.nedis.protocol.RedisCommand.LPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.LPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.LPUSHX;
-import static com.github.apache9.nedis.protocol.RedisCommand.LRANGE;
-import static com.github.apache9.nedis.protocol.RedisCommand.LREM;
-import static com.github.apache9.nedis.protocol.RedisCommand.LSET;
-import static com.github.apache9.nedis.protocol.RedisCommand.LTRIM;
-import static com.github.apache9.nedis.protocol.RedisCommand.MGET;
-import static com.github.apache9.nedis.protocol.RedisCommand.MOVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.MSET;
-import static com.github.apache9.nedis.protocol.RedisCommand.MSETNX;
-import static com.github.apache9.nedis.protocol.RedisCommand.PERSIST;
-import static com.github.apache9.nedis.protocol.RedisCommand.PEXPIRE;
-import static com.github.apache9.nedis.protocol.RedisCommand.PEXPIREAT;
-import static com.github.apache9.nedis.protocol.RedisCommand.PING;
-import static com.github.apache9.nedis.protocol.RedisCommand.PTTL;
-import static com.github.apache9.nedis.protocol.RedisCommand.QUIT;
-import static com.github.apache9.nedis.protocol.RedisCommand.RANDOMKEY;
-import static com.github.apache9.nedis.protocol.RedisCommand.RENAME;
-import static com.github.apache9.nedis.protocol.RedisCommand.RENAMENX;
-import static com.github.apache9.nedis.protocol.RedisCommand.RESTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.ROLE;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPOPLPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPUSH;
-import static com.github.apache9.nedis.protocol.RedisCommand.RPUSHX;
-import static com.github.apache9.nedis.protocol.RedisCommand.SADD;
-import static com.github.apache9.nedis.protocol.RedisCommand.SAVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SCARD;
-import static com.github.apache9.nedis.protocol.RedisCommand.SDIFF;
-import static com.github.apache9.nedis.protocol.RedisCommand.SDIFFSTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SELECT;
-import static com.github.apache9.nedis.protocol.RedisCommand.SET;
-import static com.github.apache9.nedis.protocol.RedisCommand.SINTER;
-import static com.github.apache9.nedis.protocol.RedisCommand.SINTERSTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SISMEMBER;
-import static com.github.apache9.nedis.protocol.RedisCommand.SLAVEOF;
-import static com.github.apache9.nedis.protocol.RedisCommand.SMEMBERS;
-import static com.github.apache9.nedis.protocol.RedisCommand.SMOVE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SPOP;
-import static com.github.apache9.nedis.protocol.RedisCommand.SRANDMEMBER;
-import static com.github.apache9.nedis.protocol.RedisCommand.SREM;
-import static com.github.apache9.nedis.protocol.RedisCommand.SUNION;
-import static com.github.apache9.nedis.protocol.RedisCommand.SUNIONSTORE;
-import static com.github.apache9.nedis.protocol.RedisCommand.SYNC;
-import static com.github.apache9.nedis.protocol.RedisCommand.TIME;
-import static com.github.apache9.nedis.protocol.RedisCommand.TTL;
-import static com.github.apache9.nedis.protocol.RedisCommand.TYPE;
+import static com.github.apache9.nedis.protocol.RedisCommand.*;
+import static com.github.apache9.nedis.protocol.RedisKeyword.COUNT;
 import static com.github.apache9.nedis.protocol.RedisKeyword.EX;
 import static com.github.apache9.nedis.protocol.RedisKeyword.GETNAME;
 import static com.github.apache9.nedis.protocol.RedisKeyword.KILL;
 import static com.github.apache9.nedis.protocol.RedisKeyword.LIST;
+import static com.github.apache9.nedis.protocol.RedisKeyword.MATCH;
 import static com.github.apache9.nedis.protocol.RedisKeyword.NX;
 import static com.github.apache9.nedis.protocol.RedisKeyword.PX;
 import static com.github.apache9.nedis.protocol.RedisKeyword.REPLACE;
@@ -92,24 +14,34 @@ import static com.github.apache9.nedis.protocol.RedisKeyword.RESETSTAT;
 import static com.github.apache9.nedis.protocol.RedisKeyword.REWRITE;
 import static com.github.apache9.nedis.protocol.RedisKeyword.SETNAME;
 import static com.github.apache9.nedis.protocol.RedisKeyword.XX;
+import static com.github.apache9.nedis.util.NedisUtils.toBytes;
+import static com.github.apache9.nedis.util.NedisUtils.toParams;
+import static com.github.apache9.nedis.util.NedisUtils.toParamsReverse;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import javax.naming.OperationNotSupportedException;
 
 import com.github.apache9.nedis.handler.RedisDuplexHandler;
+import com.github.apache9.nedis.protocol.BitOp;
+import com.github.apache9.nedis.protocol.HashEntry;
 import com.github.apache9.nedis.protocol.RedisCommand;
 import com.github.apache9.nedis.protocol.RedisKeyword;
+import com.github.apache9.nedis.protocol.ScanParams;
+import com.github.apache9.nedis.protocol.ScanResult;
+import com.github.apache9.nedis.protocol.SetParams;
 
 /**
- * @author zhangduo
+ * @author Apache9
  */
 public class NedisClientImpl implements NedisClient {
 
@@ -119,13 +51,19 @@ public class NedisClientImpl implements NedisClient {
 
     private final PromiseConverter<List<byte[]>> arrayConverter;
 
+    private final PromiseConverter<ScanResult<byte[]>> arrayScanResultConverter;
+
     private final PromiseConverter<Boolean> booleanConverter;
 
     private final PromiseConverter<byte[]> bytesConverter;
 
     private final PromiseConverter<Double> doubleConverter;
 
+    private final PromiseConverter<ScanResult<HashEntry>> hashScanResultConverter;
+
     private final PromiseConverter<Long> longConverter;
+
+    private final PromiseConverter<Map<byte[], byte[]>> mapConverter;
 
     private final PromiseConverter<Object> objectConverter;
 
@@ -145,6 +83,26 @@ public class NedisClientImpl implements NedisClient {
         this.objectConverter = PromiseConverter.toObject(eventLoop);
         this.stringConverter = PromiseConverter.toString(eventLoop);
         this.voidConverter = PromiseConverter.toVoid(eventLoop);
+        this.arrayScanResultConverter = PromiseConverter.toArrayScanResult(eventLoop);
+        this.mapConverter = PromiseConverter.toMap(eventLoop);
+        this.hashScanResultConverter = PromiseConverter.toHashScanResult(eventLoop);
+    }
+
+    private void addScanParams(List<byte[]> params, ScanParams scan) {
+        params.add(scan.cursor());
+        if (scan.match() != null) {
+            params.add(MATCH.raw);
+            params.add(scan.match());
+        }
+        if (scan.count() > 0) {
+            params.add(COUNT.raw);
+            params.add(toBytes(scan.count()));
+        }
+    }
+
+    @Override
+    public Future<Long> append(byte[] key, byte[] value) {
+        return execCmd(longConverter, APPEND, key, value);
     }
 
     @Override
@@ -163,6 +121,47 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
+    public Future<Void> bgrewriteaof() {
+        return execCmd(voidConverter, BGREWRITEAOF);
+    }
+
+    @Override
+    public Future<Void> bgsave() {
+        return execCmd(voidConverter, BGSAVE);
+    }
+
+    @Override
+    public Future<Long> bitcount(byte[] key) {
+        return execCmd(longConverter, BITCOUNT, key);
+    }
+
+    @Override
+    public Future<Long> bitcount(byte[] key, long startInclusive, long endInclusive) {
+        return execCmd(longConverter, BITCOUNT, toBytes(startInclusive), toBytes(endInclusive));
+    }
+
+    @Override
+    public Future<Long> bitop(BitOp op, byte[] dst, byte[]... keys) {
+        return execCmd(longConverter, BITOP, toParamsReverse(keys, op.raw, dst));
+    }
+
+    @Override
+    public Future<Long> bitpos(byte[] key, boolean bit) {
+        return execCmd(longConverter, BITPOS, key, toBytes(bit));
+    }
+
+    @Override
+    public Future<Long> bitpos(byte[] key, boolean bit, long startInclusive) {
+        return execCmd(longConverter, BITPOS, key, toBytes(bit), toBytes(startInclusive));
+    }
+
+    @Override
+    public Future<Long> bitpos(byte[] key, boolean bit, long startInclusive, long endInclusive) {
+        return execCmd(longConverter, BITPOS, key, toBytes(bit), toBytes(startInclusive),
+                toBytes(endInclusive));
+    }
+
+    @Override
     public Future<List<byte[]>> blpop(long timeoutSeconds, byte[]... keys) {
         return execCmd(arrayConverter, BLPOP, toParams(keys, toBytes(timeoutSeconds)));
     }
@@ -175,6 +174,21 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<byte[]> brpoplpush(byte[] src, byte[] dst, long timeoutSeconds) {
         return execCmd(bytesConverter, BRPOPLPUSH, src, dst, toBytes(timeoutSeconds));
+    }
+
+    @Override
+    public Future<byte[]> clientGetname() {
+        return execCmd(bytesConverter, CLIENT, GETNAME.raw);
+    }
+
+    @Override
+    public Future<Void> clientKill(byte[] addr) {
+        return execCmd(voidConverter, CLIENT, KILL.raw);
+    }
+
+    @Override
+    public Future<byte[]> clientList() {
+        return execCmd(bytesConverter, CLIENT, LIST.raw);
     }
 
     @Override
@@ -200,6 +214,31 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public ChannelFuture closeFuture() {
         return channel.closeFuture();
+    }
+
+    @Override
+    public Future<List<byte[]>> configGet(byte[] pattern) {
+        return execCmd(arrayConverter, CONFIG, RedisKeyword.GET.raw);
+    }
+
+    @Override
+    public Future<Void> configResetstat() {
+        return execCmd(voidConverter, CONFIG, RESETSTAT.raw);
+    }
+
+    @Override
+    public Future<Void> configRewrite() {
+        return execCmd(voidConverter, CONFIG, REWRITE.raw);
+    }
+
+    @Override
+    public Future<Void> configSet(byte[] name, byte[] value) {
+        return execCmd(voidConverter, CONFIG, RedisKeyword.SET.raw);
+    }
+
+    @Override
+    public Future<Long> dbsize() {
+        return execCmd(longConverter, DBSIZE);
     }
 
     @Override
@@ -275,8 +314,114 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
+    public Future<Void> flushall() {
+        return execCmd(voidConverter, FLUSHALL);
+    }
+
+    @Override
+    public Future<Void> flushdb() {
+        return execCmd(voidConverter, FLUSHDB);
+    }
+
+    @Override
     public Future<byte[]> get(byte[] key) {
         return execCmd(bytesConverter, GET, key);
+    }
+
+    @Override
+    public Future<Boolean> getbit(byte[] key, long offset) {
+        return execCmd(booleanConverter, GETBIT, key, toBytes(offset));
+    }
+
+    @Override
+    public Future<byte[]> getrange(byte[] key, long startInclusive, long endInclusive) {
+        return execCmd(bytesConverter, GETRANGE, key, toBytes(startInclusive),
+                toBytes(endInclusive));
+    }
+
+    @Override
+    public Future<byte[]> getset(byte[] key, byte[] value) {
+        return execCmd(bytesConverter, GETSET, key, value);
+    }
+
+    @Override
+    public Future<Long> hdel(byte[] key, byte[]... fields) {
+        return execCmd(longConverter, HDEL, toParamsReverse(fields, key));
+    }
+
+    @Override
+    public Future<Boolean> hexists(byte[] key, byte[] field) {
+        return execCmd(booleanConverter, HEXISTS, key, field);
+    }
+
+    @Override
+    public Future<byte[]> hget(byte[] key, byte[] field) {
+        return execCmd(bytesConverter, HGET, key, field);
+    }
+
+    @Override
+    public Future<Map<byte[], byte[]>> hgetAll(byte[] key) {
+        return execCmd(mapConverter, HGETALL, key);
+    }
+
+    @Override
+    public Future<Long> hincrby(byte[] key, byte[] field, long delta) {
+        return execCmd(longConverter, HINCRBY, key, field, toBytes(delta));
+    }
+
+    @Override
+    public Future<Double> hincrbyfloat(byte[] key, byte[] field, double delta) {
+        return execCmd(doubleConverter, HINCRBYFLOAT, key, field, toBytes(delta));
+    }
+
+    @Override
+    public Future<List<byte[]>> hkeys(byte[] key) {
+        return execCmd(arrayConverter, HKEYS, key);
+    }
+
+    @Override
+    public Future<Long> hlen(byte[] key) {
+        return execCmd(longConverter, HLEN, key);
+    }
+
+    @Override
+    public Future<List<byte[]>> hmget(byte[] key, byte[]... fields) {
+        return execCmd(arrayConverter, HMGET, toParamsReverse(fields, key));
+    }
+
+    @Override
+    public Future<Void> hmset(byte[] key, Map<byte[], byte[]> map) {
+        byte[][] params = new byte[2 * map.size() + 1][];
+        params[0] = key;
+        int i = 1;
+        for (Map.Entry<byte[], byte[]> e: map.entrySet()) {
+            params[i++] = e.getKey();
+            params[i++] = e.getValue();
+        }
+        return execCmd(voidConverter, HMSET, params);
+    }
+
+    @Override
+    public Future<ScanResult<HashEntry>> hscan(byte[] key, ScanParams params) {
+        List<byte[]> p = new ArrayList<>();
+        p.add(key);
+        addScanParams(p, params);
+        return execCmd(hashScanResultConverter, HSCAN, p.toArray(new byte[0][]));
+    }
+
+    @Override
+    public Future<Boolean> hset(byte[] key, byte[] field, byte[] value) {
+        return execCmd(booleanConverter, HSET, key, field, value);
+    }
+
+    @Override
+    public Future<Boolean> hsetnx(byte[] key, byte[] field, byte[] value) {
+        return execCmd(booleanConverter, HSETNX, key, field, value);
+    }
+
+    @Override
+    public Future<List<byte[]>> hvals(byte[] key) {
+        return execCmd(arrayConverter, HVALS, key);
     }
 
     @Override
@@ -295,6 +440,16 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
+    public Future<byte[]> info() {
+        return execCmd(bytesConverter, INFO);
+    }
+
+    @Override
+    public Future<byte[]> info(byte[] section) {
+        return execCmd(bytesConverter, INFO, section);
+    }
+
+    @Override
     public boolean isOpen() {
         return channel.isOpen();
     }
@@ -302,6 +457,11 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<List<byte[]>> keys(byte[] pattern) {
         return execCmd(arrayConverter, KEYS, pattern);
+    }
+
+    @Override
+    public Future<Long> lastsave() {
+        return execCmd(longConverter, LASTSAVE);
     }
 
     @Override
@@ -452,6 +612,11 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
+    public Future<List<byte[]>> role() {
+        return execCmd(arrayConverter, ROLE);
+    }
+
+    @Override
     public Future<byte[]> rpop(byte[] key) {
         return execCmd(bytesConverter, RPOP, key);
     }
@@ -472,8 +637,20 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Long> sadd(byte[] key, byte[] member, byte[]... members) {
-        return execCmd(longConverter, SADD, toParamsReverse(members, member));
+    public Future<Long> sadd(byte[] key, byte[]... members) {
+        return execCmd(longConverter, SADD, toParamsReverse(members, key));
+    }
+
+    @Override
+    public Future<Void> save(boolean save) {
+        return execCmd(voidConverter, SAVE);
+    }
+
+    @Override
+    public Future<ScanResult<byte[]>> scan(ScanParams params) {
+        List<byte[]> p = new ArrayList<>();
+        addScanParams(p, params);
+        return execCmd(arrayScanResultConverter, SCAN, p.toArray(new byte[0][]));
     }
 
     @Override
@@ -508,42 +685,37 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Boolean> set(byte[] key, byte[] value) {
-        return execCmd(booleanConverter, SET, key, value);
+        return set(key, value, new SetParams());
     }
 
     @Override
-    public Future<Boolean> setex(byte[] key, byte[] value, long seconds) {
-        return execCmd(booleanConverter, SET, key, value, EX.raw, toBytes(seconds));
+    public Future<Boolean> set(byte[] key, byte[] value, SetParams params) {
+        List<byte[]> p = new ArrayList<>();
+        p.add(key);
+        p.add(value);
+        if (params.ex() > 0) {
+            p.add(EX.raw);
+            p.add(toBytes(params.ex()));
+        } else if (params.px() > 0) {
+            p.add(PX.raw);
+            p.add(toBytes(params.px()));
+        }
+        if (params.nx()) {
+            p.add(NX.raw);
+        } else if (params.xx()) {
+            p.add(XX.raw);
+        }
+        return execCmd(booleanConverter, SET, p.toArray(new byte[0][]));
     }
 
     @Override
-    public Future<Boolean> setexnx(byte[] key, byte[] value, long seconds) {
-        return execCmd(booleanConverter, SET, key, value, EX.raw, toBytes(seconds), NX.raw);
+    public Future<Boolean> setbit(byte[] key, long offset, boolean bit) {
+        return execCmd(booleanConverter, SETBIT, key, toBytes(offset), toBytes(bit));
     }
 
     @Override
-    public Future<Boolean> setexxx(byte[] key, byte[] value, long seconds) {
-        return execCmd(booleanConverter, SET, key, value, EX.raw, toBytes(seconds), XX.raw);
-    }
-
-    @Override
-    public Future<Boolean> setnx(byte[] key, byte[] value) {
-        return execCmd(booleanConverter, SET, key, value, NX.raw);
-    }
-
-    @Override
-    public Future<Boolean> setpx(byte[] key, byte[] value, long milliseconds) {
-        return execCmd(booleanConverter, SET, key, value, PX.raw, toBytes(milliseconds));
-    }
-
-    @Override
-    public Future<Boolean> setpxnx(byte[] key, byte[] value, long milliseconds) {
-        return execCmd(booleanConverter, SET, key, value, PX.raw, toBytes(milliseconds), NX.raw);
-    }
-
-    @Override
-    public Future<Boolean> setpxxx(byte[] key, byte[] value, long milliseconds) {
-        return execCmd(booleanConverter, SET, key, value, PX.raw, toBytes(milliseconds), XX.raw);
+    public Future<Long> setrange(byte[] key, long offset, byte[] value) {
+        return execCmd(longConverter, SETRANGE, key, toBytes(offset), value);
     }
 
     @Override
@@ -565,11 +737,6 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Boolean> setxx(byte[] key, byte[] value) {
-        return execCmd(booleanConverter, SET, key, value, XX.raw);
-    }
-
-    @Override
     public Future<List<byte[]>> sinter(byte[]... keys) {
         return execCmd(arrayConverter, SINTER, keys);
     }
@@ -582,6 +749,11 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Boolean> sismember(byte[] key, byte[] member) {
         return execCmd(booleanConverter, SISMEMBER, key, member);
+    }
+
+    @Override
+    public Future<Void> slaveof(String host, int port) {
+        return execCmd(voidConverter, SLAVEOF, toBytes(host), toBytes(port));
     }
 
     @Override
@@ -611,7 +783,20 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Long> srem(byte[] key, byte[]... members) {
-        return execCmd(longConverter, SREM, members);
+        return execCmd(longConverter, SREM, toParamsReverse(members, key));
+    }
+
+    @Override
+    public Future<ScanResult<byte[]>> sscan(byte[] key, ScanParams params) {
+        List<byte[]> p = new ArrayList<>();
+        p.add(key);
+        addScanParams(p, params);
+        return execCmd(arrayScanResultConverter, SSCAN, p.toArray(new byte[0][]));
+    }
+
+    @Override
+    public Future<Long> strlen(byte[] key) {
+        return execCmd(longConverter, STRLEN, key);
     }
 
     @Override
@@ -625,106 +810,6 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Long> ttl(byte[] key) {
-        return execCmd(longConverter, TTL, key);
-    }
-
-    @Override
-    public Future<String> type(byte[] key) {
-        return execCmd(stringConverter, TYPE, key);
-    }
-
-    @Override
-    public Future<Void> bgrewriteaof() {
-        return execCmd(voidConverter, BGREWRITEAOF);
-    }
-
-    @Override
-    public Future<Void> bgsave() {
-        return execCmd(voidConverter, BGSAVE);
-    }
-
-    @Override
-    public Future<byte[]> clientGetname() {
-        return execCmd(bytesConverter, CLIENT, GETNAME.raw);
-    }
-
-    @Override
-    public Future<Void> clientKill(byte[] addr) {
-        return execCmd(voidConverter, CLIENT, KILL.raw);
-    }
-
-    @Override
-    public Future<byte[]> clientList() {
-        return execCmd(bytesConverter, CLIENT, LIST.raw);
-    }
-
-    @Override
-    public Future<List<byte[]>> configGet(byte[] pattern) {
-        return execCmd(arrayConverter, CONFIG, RedisKeyword.GET.raw);
-    }
-
-    @Override
-    public Future<Void> configResetstat() {
-        return execCmd(voidConverter, CONFIG, RESETSTAT.raw);
-    }
-
-    @Override
-    public Future<Void> configRewrite() {
-        return execCmd(voidConverter, CONFIG, REWRITE.raw);
-    }
-
-    @Override
-    public Future<Void> configSet(byte[] name, byte[] value) {
-        return execCmd(voidConverter, CONFIG, RedisKeyword.SET.raw);
-    }
-
-    @Override
-    public Future<Long> dbsize() {
-        return execCmd(longConverter, DBSIZE);
-    }
-
-    @Override
-    public Future<Void> flushall() {
-        return execCmd(voidConverter, FLUSHALL);
-    }
-
-    @Override
-    public Future<Void> flushdb() {
-        return execCmd(voidConverter, FLUSHDB);
-    }
-
-    @Override
-    public Future<byte[]> info() {
-        return execCmd(bytesConverter, INFO);
-    }
-
-    @Override
-    public Future<byte[]> info(byte[] section) {
-        return execCmd(bytesConverter, INFO, section);
-    }
-
-    @Override
-    public Future<Long> lastsave() {
-        return execCmd(longConverter, LASTSAVE);
-    }
-
-    @Override
-    public Future<List<byte[]>> role() {
-        return execCmd(arrayConverter, ROLE);
-    }
-
-    @Override
-    public Future<Void> save(boolean save) {
-        return execCmd(voidConverter, SAVE);
-    }
-
-    @Override
-    public Future<Void> slaveof(String host, int port) {
-        return execCmd(voidConverter, SLAVEOF, toBytes(host), toBytes(port));
-    }
-
-    @Override
     public Future<Void> sync() {
         return execCmd(voidConverter, SYNC);
     }
@@ -732,5 +817,15 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<List<byte[]>> time() {
         return execCmd(arrayConverter, TIME);
+    }
+
+    @Override
+    public Future<Long> ttl(byte[] key) {
+        return execCmd(longConverter, TTL, key);
+    }
+
+    @Override
+    public Future<String> type(byte[] key) {
+        return execCmd(stringConverter, TYPE, key);
     }
 }

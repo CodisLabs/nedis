@@ -1,9 +1,11 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.util;
+
+import com.github.apache9.nedis.NedisClient;
 
 /**
  * @author Apache9
  */
-class NedisClientHashSet {
+public class NedisClientHashSet {
 
     private static final float LOAD_FACTOR = 0.75f;
 
@@ -129,6 +131,9 @@ class NedisClientHashSet {
     }
 
     public NedisClient head(boolean remove) {
+        if (isEmpty()) {
+            return null;
+        }
         Entry e = header.after;
         if (remove) {
             remove(e.value);

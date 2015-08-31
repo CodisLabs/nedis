@@ -1,4 +1,4 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.util;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
+
+import com.github.apache9.nedis.NedisClient;
+import com.github.apache9.nedis.util.NedisClientHashSet;
 
 /**
  * @author Apache9

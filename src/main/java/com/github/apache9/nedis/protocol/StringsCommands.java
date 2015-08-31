@@ -9,11 +9,31 @@ import io.netty.util.concurrent.Future;
  */
 public interface StringsCommands {
 
+    Future<Long> append(byte[] key, byte[] value);
+
+    Future<Long> bitcount(byte[] key);
+
+    Future<Long> bitcount(byte[] key, long startInclusive, long endInclusive);
+
+    Future<Long> bitop(BitOp op, byte[] dst, byte[]... keys);
+
+    Future<Long> bitpos(byte[] key, boolean bit);
+
+    Future<Long> bitpos(byte[] key, boolean bit, long startInclusive);
+
+    Future<Long> bitpos(byte[] key, boolean bit, long startInclusive, long endInclusive);
+
     Future<Long> decr(byte[] key);
 
     Future<Long> decrBy(byte[] key, long delta);
 
     Future<byte[]> get(byte[] key);
+
+    Future<Boolean> getbit(byte[] key, long offset);
+
+    Future<byte[]> getrange(byte[] key, long startInclusive, long endInclusive);
+
+    Future<byte[]> getset(byte[] key, byte[] value);
 
     Future<Long> incr(byte[] key);
 
@@ -26,22 +46,14 @@ public interface StringsCommands {
     Future<Void> mset(byte[]... keysvalues);
 
     Future<Boolean> msetnx(byte[]... keysvalues);
-
+    
     Future<Boolean> set(byte[] key, byte[] value);
 
-    Future<Boolean> setex(byte[] key, byte[] value, long seconds);
+    Future<Boolean> set(byte[] key, byte[] value, SetParams params);
 
-    Future<Boolean> setexnx(byte[] key, byte[] value, long seconds);
+    Future<Boolean> setbit(byte[] key, long offset, boolean bit);
 
-    Future<Boolean> setexxx(byte[] key, byte[] value, long seconds);
+    Future<Long> setrange(byte[] key, long offset, byte[] value);
 
-    Future<Boolean> setnx(byte[] key, byte[] value);
-
-    Future<Boolean> setpx(byte[] key, byte[] value, long milliseconds);
-
-    Future<Boolean> setpxnx(byte[] key, byte[] value, long milliseconds);
-
-    Future<Boolean> setpxxx(byte[] key, byte[] value, long milliseconds);
-
-    Future<Boolean> setxx(byte[] key, byte[] value);
+    Future<Long> strlen(byte[] key);
 }

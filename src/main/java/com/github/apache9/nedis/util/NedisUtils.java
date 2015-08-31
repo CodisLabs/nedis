@@ -1,4 +1,4 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.util;
 
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
@@ -11,9 +11,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.naming.OperationNotSupportedException;
 
+import com.github.apache9.nedis.AsyncCloseable;
+import com.github.apache9.nedis.ConnectionManagement;
+import com.github.apache9.nedis.NedisClient;
+import com.github.apache9.nedis.NedisClientPool;
 import com.github.apache9.nedis.protocol.BlockingListsCommands;
 
 /**
@@ -31,6 +38,18 @@ public class NedisUtils {
 
     public static byte[] toBytes(long value) {
         return toBytes(Long.toString(value));
+    }
+
+    private static final byte[] TRUE = new byte[] {
+        '1'
+    };
+
+    private static final byte[] FALSE = new byte[] {
+        '0'
+    };
+
+    public static byte[] toBytes(boolean value) {
+        return value ? TRUE : FALSE;
     }
 
     public static byte[] toBytes(String value) {
@@ -190,5 +209,24 @@ public class NedisUtils {
                 new Class<?>[] {
                     NedisClient.class
                 }, new Invoker(pool));
+    }
+
+    public static final Comparator<byte[]> BYTES_COMPARATOR = new Comparator<byte[]>() {
+
+        @Override
+        public int compare(byte[] o1, byte[] o2) {
+            for (int i = 0, j = 0; i < o1.length && j < o2.length; i++, j++) {
+                int a = (o1[i] & 0xff);
+                int b = (o2[j] & 0xff);
+                if (a != b) {
+                    return a - b;
+                }
+            }
+            return o1.length - o2.length;
+        }
+    };
+
+    public static Map<byte[], byte[]> newBytesMap() {
+        return new TreeMap<byte[], byte[]>(BYTES_COMPARATOR);
     }
 }
