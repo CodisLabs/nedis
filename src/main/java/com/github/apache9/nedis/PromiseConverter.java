@@ -448,4 +448,37 @@ abstract class PromiseConverter<T> {
             }
         };
     }
+
+    public static PromiseConverter<List<Boolean>> toBooleanList(EventExecutor executor) {
+        return new PromiseConverter<List<Boolean>>(executor) {
+
+            @Override
+            public FutureListener<Object> newListener(final Promise<List<Boolean>> promise) {
+                return new FutureListener<Object>() {
+
+                    @Override
+                    public void operationComplete(Future<Object> future) throws Exception {
+                        if (future.isSuccess()) {
+                            Object resp = future.getNow();
+                            if (resp instanceof RedisResponseException) {
+                                promise.tryFailure((RedisResponseException) resp);
+                            } else if (resp == RedisResponseDecoder.NULL_REPLY) {
+                                promise.trySuccess(null);
+                            } else {
+                                @SuppressWarnings("unchecked")
+                                List<Long> rawValueList = (List<Long>) resp;
+                                List<Boolean> values = new ArrayList<>(rawValueList.size());
+                                for (long l: rawValueList) {
+                                    values.add(l != 0L);
+                                }
+                                promise.trySuccess(values);
+                            }
+                        } else {
+                            promise.tryFailure(future.cause());
+                        }
+                    }
+                };
+            }
+        };
+    }
 }

@@ -3,10 +3,12 @@ package com.github.apache9.nedis;
 import static com.github.apache9.nedis.protocol.RedisCommand.*;
 import static com.github.apache9.nedis.protocol.RedisKeyword.COUNT;
 import static com.github.apache9.nedis.protocol.RedisKeyword.EX;
+import static com.github.apache9.nedis.protocol.RedisKeyword.FLUSH;
 import static com.github.apache9.nedis.protocol.RedisKeyword.GETNAME;
 import static com.github.apache9.nedis.protocol.RedisKeyword.KILL;
 import static com.github.apache9.nedis.protocol.RedisKeyword.LIMIT;
 import static com.github.apache9.nedis.protocol.RedisKeyword.LIST;
+import static com.github.apache9.nedis.protocol.RedisKeyword.LOAD;
 import static com.github.apache9.nedis.protocol.RedisKeyword.MATCH;
 import static com.github.apache9.nedis.protocol.RedisKeyword.NX;
 import static com.github.apache9.nedis.protocol.RedisKeyword.PX;
@@ -82,6 +84,8 @@ public class NedisClientImpl implements NedisClient {
 
     private final PromiseConverter<ScanResult<SortedSetEntry>> sortedSetScanResultConverter;
 
+    private final PromiseConverter<List<Boolean>> booleanListConverter;
+
     public NedisClientImpl(Channel channel, NedisClientPool pool) {
         this.channel = channel;
         this.pool = pool;
@@ -100,6 +104,7 @@ public class NedisClientImpl implements NedisClient {
         this.setConverter = PromiseConverter.toSet(eventLoop);
         this.sortedSetEntryListConverter = PromiseConverter.toSortedSetEntryList(eventLoop);
         this.sortedSetScanResultConverter = PromiseConverter.toSortedSetScanResult(eventLoop);
+        this.booleanListConverter = PromiseConverter.toBooleanList(eventLoop);
     }
 
     @Override
@@ -1068,5 +1073,32 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Long> zunionstore(byte[] dst, ZSetOpParams params) {
         return execCmd(longConverter, ZINTERSTORE, toZSetOpParams(dst, params));
+    }
+
+    @Override
+    public Future<Object> evalsha(byte[] sha1, int numKeys, byte[]... keysvalues) {
+        return execCmd(objectConverter, EVALSHA,
+                toParamsReverse(keysvalues, sha1, toBytes(numKeys)));
+    }
+
+    @Override
+    public Future<List<Boolean>> scriptExists(byte[]... scripts) {
+        return execCmd(booleanListConverter, SCRIPT,
+                toParamsReverse(scripts, RedisKeyword.EXISTS.raw));
+    }
+
+    @Override
+    public Future<Void> scriptFlush() {
+        return execCmd(voidConverter, SCRIPT, FLUSH.raw);
+    }
+
+    @Override
+    public Future<Void> scriptKill() {
+        return execCmd(voidConverter, SCRIPT, KILL.raw);
+    }
+
+    @Override
+    public Future<byte[]> scriptLoad(byte[] script) {
+        return execCmd(bytesConverter, SCRIPT, LOAD.raw, script);
     }
 }
