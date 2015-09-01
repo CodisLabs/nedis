@@ -1,7 +1,6 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.util.NedisUtils.bytesToString;
-import static com.github.apache9.nedis.util.NedisUtils.newBytesMap;
+import static com.github.apache9.nedis.util.NedisUtils.*;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
@@ -11,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.github.apache9.nedis.handler.RedisResponseDecoder;
 import com.github.apache9.nedis.protocol.HashEntry;
@@ -36,7 +36,7 @@ abstract class PromiseConverter<T> {
         return executor.newPromise();
     }
 
-    public static PromiseConverter<List<byte[]>> toArray(EventExecutor executor) {
+    public static PromiseConverter<List<byte[]>> toList(EventExecutor executor) {
         return new PromiseConverter<List<byte[]>>(executor) {
 
             @Override
@@ -133,8 +133,10 @@ abstract class PromiseConverter<T> {
                             Object resp = future.getNow();
                             if (resp instanceof RedisResponseException) {
                                 promise.tryFailure((RedisResponseException) resp);
+                            } else if (resp == RedisResponseDecoder.NULL_REPLY) {
+                                promise.trySuccess(null);
                             } else {
-                                promise.trySuccess(Double.valueOf(bytesToString((byte[]) resp)));
+                                promise.trySuccess(bytesToDouble((byte[]) resp));
                             }
                         } else {
                             promise.tryFailure(future.cause());
@@ -158,6 +160,8 @@ abstract class PromiseConverter<T> {
                             Object resp = future.getNow();
                             if (resp instanceof RedisResponseException) {
                                 promise.tryFailure((RedisResponseException) resp);
+                            } else if (resp == RedisResponseDecoder.NULL_REPLY) {
+                                promise.trySuccess(null);
                             } else {
                                 promise.trySuccess((Long) resp);
                             }
@@ -183,6 +187,8 @@ abstract class PromiseConverter<T> {
                             Object resp = future.getNow();
                             if (resp instanceof RedisResponseException) {
                                 promise.tryFailure((RedisResponseException) resp);
+                            } else if (resp == RedisResponseDecoder.NULL_REPLY) {
+                                promise.trySuccess(null);
                             } else {
                                 promise.trySuccess(resp);
                             }
@@ -328,11 +334,13 @@ abstract class PromiseConverter<T> {
                             } else {
                                 List<Object> list = (List<Object>) resp;
                                 byte[] cursor = (byte[]) list.get(0);
-                                List<List<byte[]>> rawValueList = (List<List<byte[]>>) list.get(1);
-                                List<SortedSetEntry> values = new ArrayList<>(rawValueList.size());
-                                for (List<byte[]> rawValue: rawValueList) {
-                                    values.add(new SortedSetEntry(rawValue.get(0), Double
-                                            .parseDouble(bytesToString(rawValue.get(1)))));
+                                List<byte[]> rawValueList = (List<byte[]>) list.get(1);
+                                List<SortedSetEntry> values = new ArrayList<>(
+                                        rawValueList.size() / 2);
+                                for (Iterator<byte[]> iter = rawValueList.iterator(); iter
+                                        .hasNext();) {
+                                    values.add(new SortedSetEntry(iter.next(), bytesToDouble(iter
+                                            .next())));
                                 }
                                 promise.trySuccess(new ScanResult<SortedSetEntry>(cursor, values));
                             }
@@ -361,10 +369,74 @@ abstract class PromiseConverter<T> {
                             } else {
                                 @SuppressWarnings("unchecked")
                                 List<byte[]> rawValueList = (List<byte[]>) resp;
-                                Map<byte[], byte[]> values = newBytesMap();
+                                Map<byte[], byte[]> values = newBytesKeyMap();
                                 for (Iterator<byte[]> iter = rawValueList.iterator(); iter
                                         .hasNext();) {
                                     values.put(iter.next(), iter.next());
+                                }
+                                promise.trySuccess(values);
+                            }
+                        } else {
+                            promise.tryFailure(future.cause());
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    public static PromiseConverter<Set<byte[]>> toSet(EventExecutor executor) {
+        return new PromiseConverter<Set<byte[]>>(executor) {
+
+            @Override
+            public FutureListener<Object> newListener(final Promise<Set<byte[]>> promise) {
+                return new FutureListener<Object>() {
+
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public void operationComplete(Future<Object> future) throws Exception {
+                        if (future.isSuccess()) {
+                            Object resp = future.getNow();
+                            if (resp instanceof RedisResponseException) {
+                                promise.tryFailure((RedisResponseException) resp);
+                            } else if (resp == RedisResponseDecoder.NULL_REPLY) {
+                                promise.trySuccess(null);
+                            } else {
+                                Set<byte[]> values = newBytesSet();
+                                values.addAll((List<byte[]>) resp);
+                                promise.trySuccess(values);
+                            }
+                        } else {
+                            promise.tryFailure(future.cause());
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    public static PromiseConverter<List<SortedSetEntry>> toSortedSetEntryList(EventExecutor executor) {
+        return new PromiseConverter<List<SortedSetEntry>>(executor) {
+
+            @Override
+            public FutureListener<Object> newListener(final Promise<List<SortedSetEntry>> promise) {
+                return new FutureListener<Object>() {
+
+                    @Override
+                    public void operationComplete(Future<Object> future) throws Exception {
+                        if (future.isSuccess()) {
+                            Object resp = future.getNow();
+                            if (resp instanceof RedisResponseException) {
+                                promise.tryFailure((RedisResponseException) resp);
+                            } else {
+                                @SuppressWarnings("unchecked")
+                                List<byte[]> rawValueList = (List<byte[]>) resp;
+                                List<SortedSetEntry> values = new ArrayList<>(
+                                        rawValueList.size() / 2);
+                                for (Iterator<byte[]> iter = rawValueList.iterator(); iter
+                                        .hasNext();) {
+                                    values.add(new SortedSetEntry(iter.next(), bytesToDouble(iter
+                                            .next())));
                                 }
                                 promise.trySuccess(values);
                             }

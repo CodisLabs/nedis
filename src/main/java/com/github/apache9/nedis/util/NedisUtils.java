@@ -13,7 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.naming.OperationNotSupportedException;
 
@@ -58,6 +60,10 @@ public class NedisUtils {
 
     public static String bytesToString(byte[] value) {
         return new String(value, StandardCharsets.UTF_8);
+    }
+
+    public static double bytesToDouble(byte[] value) {
+        return Double.parseDouble(bytesToString(value));
     }
 
     public static byte[][] toParamsReverse(byte[][] tailParams, byte[]... headParams) {
@@ -226,7 +232,11 @@ public class NedisUtils {
         }
     };
 
-    public static Map<byte[], byte[]> newBytesMap() {
-        return new TreeMap<byte[], byte[]>(BYTES_COMPARATOR);
+    public static <T> Map<byte[], T> newBytesKeyMap() {
+        return new TreeMap<byte[], T>(BYTES_COMPARATOR);
+    }
+
+    public static Set<byte[]> newBytesSet() {
+        return new TreeSet<byte[]>(BYTES_COMPARATOR);
     }
 }

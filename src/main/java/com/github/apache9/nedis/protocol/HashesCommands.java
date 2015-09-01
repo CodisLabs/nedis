@@ -28,7 +28,7 @@ public interface HashesCommands {
 
     Future<List<byte[]>> hmget(byte[] key, byte[]... fields);
 
-    Future<Void> hmset(byte[] key, Map<byte[], byte[]> map);
+    Future<Void> hmset(byte[] key, Map<byte[], byte[]> field2Value);
 
     Future<ScanResult<HashEntry>> hscan(byte[] key, ScanParams params);
 

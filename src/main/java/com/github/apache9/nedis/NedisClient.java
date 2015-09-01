@@ -10,6 +10,7 @@ import com.github.apache9.nedis.protocol.ListsCommands;
 import com.github.apache9.nedis.protocol.ScriptingCommands;
 import com.github.apache9.nedis.protocol.ServerCommands;
 import com.github.apache9.nedis.protocol.SetsCommands;
+import com.github.apache9.nedis.protocol.SortedSetsCommands;
 import com.github.apache9.nedis.protocol.StringsCommands;
 
 /**
@@ -17,7 +18,7 @@ import com.github.apache9.nedis.protocol.StringsCommands;
  */
 public interface NedisClient extends ConnectionManagement, ConnectionCommands, KeysCommands,
         StringsCommands, ScriptingCommands, ListsCommands, SetsCommands, ServerCommands,
-        HashesCommands, HyperLogLogCommands {
+        HashesCommands, HyperLogLogCommands, SortedSetsCommands {
 
     /**
      * General method to execute a redis command.

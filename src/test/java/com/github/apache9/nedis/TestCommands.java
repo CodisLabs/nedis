@@ -6,7 +6,7 @@ import static com.github.apache9.nedis.TestUtils.cleanRedis;
 import static com.github.apache9.nedis.TestUtils.probeFreePort;
 import static com.github.apache9.nedis.TestUtils.waitUntilRedisUp;
 import static com.github.apache9.nedis.util.NedisUtils.bytesToString;
-import static com.github.apache9.nedis.util.NedisUtils.newBytesMap;
+import static com.github.apache9.nedis.util.NedisUtils.newBytesKeyMap;
 import static com.github.apache9.nedis.util.NedisUtils.toBytes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +28,7 @@ import com.github.apache9.nedis.protocol.ScanParams;
 import com.github.apache9.nedis.protocol.ScanResult;
 import com.github.apache9.nedis.util.NedisUtils;
 import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -75,8 +76,8 @@ public class TestCommands {
         }
     };
 
-    private static Set<String> toStringSet(List<byte[]> list) {
-        return Sets.newHashSet(Lists.transform(list, BYTES_TO_STRING));
+    private static Set<String> toStringSet(Collection<byte[]> list) {
+        return Sets.newHashSet(Collections2.transform(list, BYTES_TO_STRING));
     }
 
     private static Map<String, String> toStringMap(Map<byte[], byte[]> map) {
@@ -172,7 +173,7 @@ public class TestCommands {
         assertSetEquals(Sets.newHashSet("v1", "v2"),
                 toStringSet(CLIENT.hmget(toBytes("h"), toBytes("f1"), toBytes("f2")).sync()
                         .getNow()));
-        Map<byte[], byte[]> map = newBytesMap();
+        Map<byte[], byte[]> map = newBytesKeyMap();
         map.put(toBytes("f3"), toBytes("v3"));
         map.put(toBytes("f4"), toBytes("v4"));
         CLIENT.hmset(toBytes("h"), map).sync();
@@ -218,5 +219,14 @@ public class TestCommands {
                 Double.valueOf(
                         bytesToString(CLIENT.hget(toBytes("h"), toBytes("d")).sync().getNow()))
                         .toString());
+    }
+
+    @Test
+    public void testSortedSetsCommands() throws InterruptedException {
+        assertEquals(1L, CLIENT.zadd(toBytes("z"), 1.0, toBytes("first")).sync().getNow()
+                .longValue());
+        assertEquals(1L, CLIENT.zadd(toBytes("z"), 2.0, toBytes("seconds")).sync().getNow()
+                .longValue());
+        assertEquals(2L, CLIENT.zcard(toBytes("z")).sync().getNow().longValue());
     }
 }
