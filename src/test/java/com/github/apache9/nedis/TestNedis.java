@@ -8,6 +8,7 @@ import static com.github.apache9.nedis.util.NedisUtils.bytesToString;
 import static com.github.apache9.nedis.util.NedisUtils.toBytes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.concurrent.Future;
@@ -22,6 +23,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.github.apache9.nedis.exception.RedisResponseException;
+import com.github.apache9.nedis.exception.TxnAbortException;
+import com.github.apache9.nedis.exception.TxnDiscardException;
 import com.github.apache9.nedis.util.NedisUtils;
 
 /**
@@ -152,6 +156,74 @@ public class TestNedis {
 
         assertTrue(brpoplpushFuture.isDone());
         assertEquals("b", bytesToString(brpoplpushFuture.getNow()));
+    }
 
+    private void testTxn(NedisClient txnClient, NedisClient chkClient) throws InterruptedException {
+        Future<Void> multiFuture = txnClient.multi();
+        Future<Boolean> setFuture1 = txnClient.set(toBytes("k1"), toBytes("v1"));
+        Future<Boolean> setFuture2 = txnClient.set(toBytes("k2"), toBytes("v2"));
+        Thread.sleep(1000);
+        assertFalse(setFuture1.isDone());
+        assertFalse(setFuture2.isDone());
+        assertFalse(chkClient.exists(toBytes("k1")).sync().getNow().booleanValue());
+        assertFalse(chkClient.exists(toBytes("k2")).sync().getNow().booleanValue());
+        List<Object> execResult = txnClient.exec().sync().getNow();
+        assertTrue(multiFuture.isDone());
+        assertTrue(setFuture1.getNow().booleanValue());
+        assertTrue(setFuture2.getNow().booleanValue());
+        assertEquals(2, execResult.size());
+        assertEquals("OK", execResult.get(0).toString());
+        assertEquals("OK", execResult.get(1).toString());
+
+        multiFuture = txnClient.multi();
+        setFuture1 = txnClient.set(toBytes("k1"), toBytes("v3"));
+        setFuture2 = txnClient.set(toBytes("k2"), toBytes("v4"));
+        Thread.sleep(1000);
+        assertFalse(setFuture1.isDone());
+        assertFalse(setFuture2.isDone());
+        assertEquals("v1", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
+        assertEquals("v2", bytesToString(chkClient.get(toBytes("k2")).sync().getNow()));
+        txnClient.discard().sync();
+        assertTrue(multiFuture.isDone());
+        assertTrue(setFuture1.cause() instanceof TxnDiscardException);
+        assertTrue(setFuture2.cause() instanceof TxnDiscardException);
+        assertEquals("v1", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
+        assertEquals("v2", bytesToString(chkClient.get(toBytes("k2")).sync().getNow()));
+
+        Future<Void> watchFuture = txnClient.watch(toBytes("k1"));
+        multiFuture = txnClient.multi();
+        setFuture1 = txnClient.set(toBytes("k1"), toBytes("v3"));
+        execResult = txnClient.exec().sync().getNow();
+        assertTrue(watchFuture.isDone());
+        assertTrue(multiFuture.isDone());
+        assertTrue(setFuture1.getNow().booleanValue());
+        assertEquals(1, execResult.size());
+        assertEquals("OK", execResult.get(0).toString());
+        assertEquals("v3", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
+
+        watchFuture = txnClient.watch(toBytes("k1"));
+        multiFuture = txnClient.multi();
+        setFuture1 = txnClient.set(toBytes("k1"), toBytes("v4"));
+        chkClient.set(toBytes("k1"), toBytes("v1")).sync().getNow();
+        execResult = txnClient.exec().sync().getNow();
+        assertTrue(watchFuture.isDone());
+        assertTrue(multiFuture.isDone());
+        assertTrue(setFuture1.cause() instanceof TxnAbortException);
+        assertNull(execResult);
+        assertEquals("v1", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
+    }
+
+    @Test
+    public void testTxn() throws InterruptedException {
+        pool = NedisClientPoolBuilder.builder()
+                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).exclusive(true).build();
+        NedisClient client = pool.acquire().sync().getNow();
+        NedisClient client2 = pool.acquire().sync().getNow();
+        try {
+            testTxn(client, client2);
+        } finally {
+            client.release();
+            client2.release();
+        }
     }
 }

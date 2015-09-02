@@ -12,7 +12,7 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
 
-import com.github.apache9.nedis.RedisResponseException;
+import com.github.apache9.nedis.exception.RedisResponseException;
 
 /**
  * @author zhangduo
@@ -46,7 +46,6 @@ public class RedisResponseDecoder extends ByteToMessageDecoder {
                 }
             }
         }));
-
         return reachCRLF.booleanValue() ? buffer.toString() : null;
     }
 
@@ -177,12 +176,6 @@ public class RedisResponseDecoder extends ByteToMessageDecoder {
         if (!decode(in, out, NULL_REPLY)) {
             in.resetReaderIndex();
         }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
-        ctx.close();
     }
 
 }

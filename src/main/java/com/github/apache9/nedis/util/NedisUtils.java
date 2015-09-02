@@ -24,6 +24,7 @@ import com.github.apache9.nedis.ConnectionManagement;
 import com.github.apache9.nedis.NedisClient;
 import com.github.apache9.nedis.NedisClientPool;
 import com.github.apache9.nedis.protocol.BlockingListsCommands;
+import com.github.apache9.nedis.protocol.TransactionsCommands;
 
 /**
  * @author Apache9
@@ -186,6 +187,10 @@ public class NedisUtils {
             if (method.getDeclaringClass().equals(ConnectionManagement.class)) {
                 throw new OperationNotSupportedException(
                         "Can not call connection related methods on pooled client");
+            }
+            if (method.getDeclaringClass().equals(TransactionsCommands.class)) {
+                throw new OperationNotSupportedException(
+                        "Can not call transaction related methods on pooled client");
             }
             Future<NedisClient> clientFuture = pool.acquire();
             @SuppressWarnings("rawtypes")

@@ -5,7 +5,7 @@ import static com.github.apache9.nedis.TestUtils.assertSetEquals;
 import static com.github.apache9.nedis.TestUtils.cleanRedis;
 import static com.github.apache9.nedis.TestUtils.probeFreePort;
 import static com.github.apache9.nedis.TestUtils.waitUntilRedisUp;
-import static com.github.apache9.nedis.util.NedisUtils.bytesToString;
+import static com.github.apache9.nedis.util.NedisUtils.*;
 import static com.github.apache9.nedis.util.NedisUtils.newBytesKeyMap;
 import static com.github.apache9.nedis.util.NedisUtils.toBytes;
 import static org.junit.Assert.assertEquals;
@@ -15,8 +15,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -26,6 +28,7 @@ import org.junit.Test;
 import com.github.apache9.nedis.protocol.HashEntry;
 import com.github.apache9.nedis.protocol.ScanParams;
 import com.github.apache9.nedis.protocol.ScanResult;
+import com.github.apache9.nedis.protocol.SortParams;
 import com.github.apache9.nedis.util.NedisUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
@@ -228,5 +231,59 @@ public class TestCommands {
         assertEquals(1L, CLIENT.zadd(toBytes("z"), 2.0, toBytes("seconds")).sync().getNow()
                 .longValue());
         assertEquals(2L, CLIENT.zcard(toBytes("z")).sync().getNow().longValue());
+    }
+
+    private List<Long> toLongList(List<byte[]> list) {
+        return Lists.transform(list, new Function<byte[], Long>() {
+
+            @Override
+            public Long apply(byte[] input) {
+                return Long.valueOf(bytesToString(input));
+            }
+        });
+    }
+
+    private void assertSorted(List<byte[]> list, boolean asc, int expectedCount) {
+        List<Long> valueList = toLongList(list);
+        for (int i = 0; i < valueList.size() - 1; i++) {
+            if (asc) {
+                assertTrue(valueList.get(i) <= valueList.get(i + 1));
+            } else {
+                assertTrue(valueList.get(i) >= valueList.get(i + 1));
+            }
+        }
+        assertEquals(expectedCount, list.size());
+    }
+
+    private void assertLexicographicallySorted(List<byte[]> list, boolean asc, int expectedCount) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (asc) {
+                assertTrue(BYTES_COMPARATOR.compare(list.get(i), list.get(i + 1)) <= 0);
+            } else {
+                assertTrue(BYTES_COMPARATOR.compare(list.get(i), list.get(i + 1)) >= 0);
+            }
+        }
+        assertEquals(expectedCount, list.size());
+    }
+
+    @Test
+    public void testKeysCommands() throws InterruptedException {
+        for (int i = 0; i < 100; i++) {
+            CLIENT.lpush(toBytes("list1"), toBytes(ThreadLocalRandom.current().nextInt())).sync();
+        }
+        assertSorted(CLIENT.sort(toBytes("list1")).sync().getNow(), true, 100);
+        assertSorted(CLIENT.sort(toBytes("list1"), new SortParams().desc()).sync().getNow(), false,
+                100);
+
+        assertEquals(100L, CLIENT.sort(toBytes("list1"), toBytes("list2")).sync().getNow()
+                .longValue());
+        assertSorted(CLIENT.lrange(toBytes("list2"), 0, 99).sync().getNow(), true, 100);
+
+        assertEquals(
+                50L,
+                CLIENT.sort(toBytes("list1"), new SortParams().desc().alpha().limit(10, 50),
+                        toBytes("list2")).sync().getNow().longValue());
+        assertLexicographicallySorted(CLIENT.lrange(toBytes("list2"), 0, 99).sync().getNow(),
+                false, 50);
     }
 }

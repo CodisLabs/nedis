@@ -1,6 +1,8 @@
 package com.github.apache9.nedis;
 
-import static com.github.apache9.nedis.util.NedisUtils.*;
+import static com.github.apache9.nedis.util.NedisUtils.bytesToDouble;
+import static com.github.apache9.nedis.util.NedisUtils.newBytesKeyMap;
+import static com.github.apache9.nedis.util.NedisUtils.newBytesSet;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.github.apache9.nedis.exception.RedisResponseException;
 import com.github.apache9.nedis.handler.RedisResponseDecoder;
 import com.github.apache9.nedis.protocol.HashEntry;
 import com.github.apache9.nedis.protocol.ScanResult;
@@ -472,6 +475,34 @@ abstract class PromiseConverter<T> {
                                     values.add(l != 0L);
                                 }
                                 promise.trySuccess(values);
+                            }
+                        } else {
+                            promise.tryFailure(future.cause());
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    public static PromiseConverter<List<Object>> toObjectList(EventExecutor executor) {
+        return new PromiseConverter<List<Object>>(executor) {
+
+            @Override
+            public FutureListener<Object> newListener(final Promise<List<Object>> promise) {
+                return new FutureListener<Object>() {
+
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public void operationComplete(Future<Object> future) throws Exception {
+                        if (future.isSuccess()) {
+                            Object resp = future.getNow();
+                            if (resp instanceof RedisResponseException) {
+                                promise.tryFailure((RedisResponseException) resp);
+                            } else if (resp == RedisResponseDecoder.NULL_REPLY) {
+                                promise.trySuccess(null);
+                            } else {
+                                promise.trySuccess((List<Object>) resp);
                             }
                         } else {
                             promise.tryFailure(future.cause());

@@ -43,6 +43,14 @@ public interface KeysCommands {
 
     Future<ScanResult<byte[]>> scan(ScanParams params);
 
+    Future<List<byte[]>> sort(byte[] key);
+
+    Future<List<byte[]>> sort(byte[] key, SortParams params);
+
+    Future<Long> sort(byte[] key, byte[] dst);
+
+    Future<Long> sort(byte[] key, SortParams params, byte[] dst);
+
     Future<Long> ttl(byte[] key);
 
     Future<String> type(byte[] key);

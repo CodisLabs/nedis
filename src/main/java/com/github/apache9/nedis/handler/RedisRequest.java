@@ -1,4 +1,4 @@
-package com.github.apache9.nedis;
+package com.github.apache9.nedis.handler;
 
 import io.netty.util.concurrent.Promise;
 
