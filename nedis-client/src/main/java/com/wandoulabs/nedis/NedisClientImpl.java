@@ -138,10 +138,9 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Void> auth(byte[] password) {
         if (pool != null) {
-            Promise<Void> promise = eventLoop().newPromise();
-            promise.tryFailure(new OperationNotSupportedException(
-                    "'auth' is not allowed on a pooled connection"));
-            return promise;
+            return eventLoop().newFailedFuture(
+                    new OperationNotSupportedException(
+                            "'auth' is not allowed on a pooled connection"));
         }
         return auth0(password);
     }
@@ -224,10 +223,9 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Void> clientSetname(byte[] name) {
         if (pool != null) {
-            Promise<Void> promise = eventLoop().newPromise();
-            promise.tryFailure(new OperationNotSupportedException(
-                    "'client setname' is not allowed on a pooled connection"));
-            return promise;
+            return eventLoop().newFailedFuture(
+                    new OperationNotSupportedException(
+                            "'client setname' is not allowed on a pooled connection"));
         }
         return clientSetname0(name);
     }
@@ -657,10 +655,9 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Void> quit() {
         if (pool != null) {
-            Promise<Void> promise = eventLoop().newPromise();
-            promise.tryFailure(new OperationNotSupportedException(
-                    "'quit' is not allowed on a pooled connection"));
-            return promise;
+            return eventLoop().newFailedFuture(
+                    new OperationNotSupportedException(
+                            "'quit' is not allowed on a pooled connection"));
         }
         return quit0();
     }
@@ -780,10 +777,9 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Void> select(int index) {
         if (pool != null) {
-            Promise<Void> promise = eventLoop().newPromise();
-            promise.tryFailure(new OperationNotSupportedException(
-                    "'select' is not allowed on a pooled connection"));
-            return promise;
+            return eventLoop().newFailedFuture(
+                    new OperationNotSupportedException(
+                            "'select' is not allowed on a pooled connection"));
         }
         return select0(index);
     }

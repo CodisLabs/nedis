@@ -101,11 +101,9 @@ public class NedisUtils {
         for (;;) {
             try {
                 Method method = clazz.getDeclaredMethod("executor");
-                if (method != null) {
-                    method.setAccessible(true);
-                    return (EventExecutor) method.invoke(future);
-                }
-            } catch (NoSuchMethodException | SecurityException | IllegalAccessException
+                method.setAccessible(true);
+                return (EventExecutor) method.invoke(future);
+            } catch (NoSuchMethodException e) {} catch (SecurityException | IllegalAccessException
                     | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }

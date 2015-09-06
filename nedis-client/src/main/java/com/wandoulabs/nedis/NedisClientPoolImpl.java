@@ -204,8 +204,8 @@ public class NedisClientPoolImpl implements NedisClientPool {
     public Future<NedisClient> acquire() {
         synchronized (pool) {
             if (closed) {
-                return bootstrap.group().next().<NedisClient>newPromise()
-                        .setFailure(new IllegalStateException("already closed"));
+                return bootstrap.group().next()
+                        .<NedisClient>newFailedFuture(new IllegalStateException("already closed"));
             }
             if (numConns < maxPooledConns) {
                 numConns++;
@@ -213,9 +213,7 @@ public class NedisClientPoolImpl implements NedisClientPool {
             }
             if (!pool.isEmpty()) {
                 NedisClient client = pool.head(exclusive);
-                Promise<NedisClient> promise = client.eventLoop().newPromise();
-                promise.setSuccess(client);
-                return promise;
+                return client.eventLoop().newSucceededFuture(client);
             }
             numConns++;
             return newClient().addListener(new AcquireFutureListener(exclusive));

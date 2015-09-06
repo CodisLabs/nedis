@@ -67,6 +67,10 @@ public class NedisClientPoolBuilder {
         return this;
     }
 
+    public EventLoopGroup group() {
+        return group;
+    }
+
     public NedisClientPoolBuilder channel(Class<? extends Channel> channelClass) {
         this.channelClass = channelClass;
         return this;
@@ -102,6 +106,10 @@ public class NedisClientPoolBuilder {
         return this;
     }
 
+    public boolean exclusive() {
+        return exclusive;
+    }
+
     public NedisClientPoolBuilder remoteAddress(String host) {
         return remoteAddress(host, 6379);
     }
@@ -115,7 +123,7 @@ public class NedisClientPoolBuilder {
         return this;
     }
 
-    private void validate() {
+    public NedisClientPoolBuilder createGroupIfNecessary() {
         if (group == null && channelClass != null) {
             throw new IllegalArgumentException("group is null but channel is not");
         }
@@ -127,6 +135,11 @@ public class NedisClientPoolBuilder {
             group = defaultEventLoopConfig.getLeft();
             channelClass = defaultEventLoopConfig.getRight();
         }
+        return this;
+    }
+
+    private void validate() {
+        createGroupIfNecessary();
         if (remoteAddress == null) {
             throw new IllegalArgumentException("remoteAddress is not set");
         }
