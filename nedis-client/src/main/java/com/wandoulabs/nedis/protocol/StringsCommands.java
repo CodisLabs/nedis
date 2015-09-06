@@ -40,7 +40,7 @@ public interface StringsCommands {
 
     Future<Long> decr(byte[] key);
 
-    Future<Long> decrBy(byte[] key, long delta);
+    Future<Long> decrby(byte[] key, long delta);
 
     Future<byte[]> get(byte[] key);
 
@@ -52,9 +52,9 @@ public interface StringsCommands {
 
     Future<Long> incr(byte[] key);
 
-    Future<Long> incrBy(byte[] key, long delta);
+    Future<Long> incrby(byte[] key, long delta);
 
-    Future<Double> incrByFloat(byte[] key, double delta);
+    Future<Double> incrbyfloat(byte[] key, double delta);
 
     Future<List<byte[]>> mget(byte[]... keys);
 

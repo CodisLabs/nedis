@@ -16,25 +16,17 @@
 package com.wandoulabs.nedis;
 
 import static com.wandoulabs.nedis.util.NedisUtils.toBytes;
-import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.wandoulabs.nedis.NedisClient;
-import com.wandoulabs.nedis.NedisClientPool;
-import com.wandoulabs.nedis.NedisClientPoolBuilder;
 
 /**
  * @author Apache9
  */
 public class TestUtils {
+
+    public static final double ERROR = 1E-4;
 
     public static int probeFreePort() throws IOException {
         try (ServerSocket ss = new ServerSocket(0)) {
@@ -68,18 +60,5 @@ public class TestUtils {
             }
         }
         pool.close().syncUninterruptibly();
-    }
-
-    public static <T> void assertSetEquals(Set<T> expected, Set<T> actual) {
-        Set<T> onlyInExpected = Sets.difference(expected, actual);
-        Set<T> onlyInActual = Sets.difference(actual, expected);
-        if (!onlyInExpected.isEmpty() || !onlyInActual.isEmpty()) {
-            fail("Only in expected: " + onlyInExpected + ", only in actual: " + onlyInActual);
-        }
-    }
-
-    public static <K, V> void assertMapEquals(Map<K, V> expected, Map<K, V> actual) {
-        MapDifference<K, V> diff = Maps.difference(expected, actual);
-        assertTrue(diff.toString(), diff.areEqual());
     }
 }

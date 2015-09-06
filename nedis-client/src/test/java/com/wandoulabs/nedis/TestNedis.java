@@ -95,9 +95,9 @@ public class TestNedis {
 
         NedisClient pipelineClient = pool.acquire().sync().getNow();
         Future<Long> incrFuture = pipelineClient.incr(toBytes("num"));
-        Future<Long> incrByFuture = pipelineClient.incrBy(toBytes("num"), 2L);
+        Future<Long> incrByFuture = pipelineClient.incrby(toBytes("num"), 2L);
         Future<Long> decrFuture = pipelineClient.decr(toBytes("num"));
-        Future<Long> decrByFuture = pipelineClient.decrBy(toBytes("num"), 2L);
+        Future<Long> decrByFuture = pipelineClient.decrby(toBytes("num"), 2L);
         assertEquals(1L, incrFuture.sync().getNow().longValue());
         assertEquals(3L, incrByFuture.sync().getNow().longValue());
         assertEquals(2L, decrFuture.sync().getNow().longValue());

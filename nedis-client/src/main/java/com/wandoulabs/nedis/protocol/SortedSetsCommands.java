@@ -74,18 +74,18 @@ public interface SortedSetsCommands {
     Future<List<SortedSetEntry>> zrevrangeWithScores(byte[] key, long startInclusive,
             long stopInclusive);
 
-    Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] min, byte[] max);
+    Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] max, byte[] min);
 
-    Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] min, byte[] max, long offset, long count);
+    Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] max, byte[] min, long offset, long count);
 
-    Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] min, byte[] max);
+    Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] max, byte[] min);
 
-    Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] min, byte[] max, long offset,
+    Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] max, byte[] min, long offset,
             long count);
 
-    Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] min, byte[] max);
+    Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] max, byte[] min);
 
-    Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] min, byte[] max,
+    Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] max, byte[] min,
             long offset, long count);
 
     Future<Long> zrevrank(byte[] key, byte[] member);
@@ -94,7 +94,7 @@ public interface SortedSetsCommands {
 
     Future<Double> zscore(byte[] key, byte[] member);
 
-    Future<Long> zuniontore(byte[] dst, byte[]... keys);
+    Future<Long> zunionstore(byte[] dst, byte[]... keys);
 
     Future<Long> zunionstore(byte[] dst, ZSetOpParams params);
 }

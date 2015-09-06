@@ -32,7 +32,7 @@ public interface KeysCommands {
 
     Future<Boolean> expire(byte[] key, long seconds);
 
-    Future<Boolean> expireAt(byte[] key, long unixTimeSeconds);
+    Future<Boolean> expireat(byte[] key, long unixTimeSeconds);
 
     Future<List<byte[]>> keys(byte[] pattern);
 
@@ -44,7 +44,7 @@ public interface KeysCommands {
 
     Future<Boolean> pexpire(byte[] key, long millis);
 
-    Future<Boolean> pexpireAt(byte[] key, long unixTimeMs);
+    Future<Boolean> pexpireat(byte[] key, long unixTimeMs);
 
     Future<Long> pttl(byte[] key);
 

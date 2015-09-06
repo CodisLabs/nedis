@@ -74,6 +74,10 @@ public class NedisUtils {
         return value.getBytes(StandardCharsets.UTF_8);
     }
 
+    public static byte[] toBytesExclusive(double value) {
+        return toBytes("(" + Double.toString(value));
+    }
+
     public static String bytesToString(byte[] value) {
         return new String(value, StandardCharsets.UTF_8);
     }

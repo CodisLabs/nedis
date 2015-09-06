@@ -31,7 +31,7 @@ public interface HashesCommands {
 
     Future<byte[]> hget(byte[] key, byte[] field);
 
-    Future<Map<byte[], byte[]>> hgetAll(byte[] key);
+    Future<Map<byte[], byte[]>> hgetall(byte[] key);
 
     Future<Long> hincrby(byte[] key, byte[] field, long delta);
 

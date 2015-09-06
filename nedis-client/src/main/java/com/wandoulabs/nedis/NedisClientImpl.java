@@ -277,7 +277,7 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Long> decrBy(byte[] key, long delta) {
+    public Future<Long> decrby(byte[] key, long delta) {
         return execCmd(longConverter, DECRBY, key, toBytes(delta));
     }
 
@@ -339,7 +339,8 @@ public class NedisClientImpl implements NedisClient {
 
     private Future<Object> execCmd0(byte[] cmd, byte[]... params) {
         Promise<Object> promise = eventLoop().newPromise();
-        channel.writeAndFlush(new RedisRequest(promise, toParamsReverse(params, cmd)));
+        RedisRequest req = new RedisRequest(promise, toParamsReverse(params, cmd));
+        channel.writeAndFlush(req);
         return promise;
     }
 
@@ -380,7 +381,7 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Boolean> expireAt(byte[] key, long unixTimeSeconds) {
+    public Future<Boolean> expireat(byte[] key, long unixTimeSeconds) {
         return execCmd(booleanConverter, EXPIREAT, key, toBytes(unixTimeSeconds));
     }
 
@@ -431,7 +432,7 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Map<byte[], byte[]>> hgetAll(byte[] key) {
+    public Future<Map<byte[], byte[]>> hgetall(byte[] key) {
         return execCmd(mapConverter, HGETALL, key);
     }
 
@@ -498,12 +499,12 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Long> incrBy(byte[] key, long delta) {
+    public Future<Long> incrby(byte[] key, long delta) {
         return execCmd(longConverter, INCRBY, key, toBytes(delta));
     }
 
     @Override
-    public Future<Double> incrByFloat(byte[] key, double delta) {
+    public Future<Double> incrbyfloat(byte[] key, double delta) {
         return execCmd(doubleConverter, INCRBYFLOAT, key, toBytes(delta));
     }
 
@@ -589,7 +590,8 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Void> migrate(byte[] host, int port, byte[] key, int dstDb, long timeoutMs) {
-        return execCmd(voidConverter, host, toBytes(port), key, toBytes(dstDb), toBytes(timeoutMs));
+        return execCmd(voidConverter, MIGRATE, host, toBytes(port), key, toBytes(dstDb),
+                toBytes(timeoutMs));
     }
 
     @Override
@@ -623,7 +625,7 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Boolean> pexpireAt(byte[] key, long unixTimeMs) {
+    public Future<Boolean> pexpireat(byte[] key, long unixTimeMs) {
         return execCmd(booleanConverter, PEXPIREAT, toBytes(unixTimeMs));
     }
 
@@ -792,7 +794,7 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Boolean> set(byte[] key, byte[] value) {
-        return set(key, value, new SetParams());
+        return execCmd(booleanConverter, SET, key, value);
     }
 
     @Override
@@ -1037,7 +1039,7 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Double> zincrby(byte[] key, double delta, byte[] member) {
-        return execCmd(doubleConverter, ZCOUNT, key, toBytes(delta), member);
+        return execCmd(doubleConverter, ZINCRBY, key, toBytes(delta), member);
     }
 
     @Override
@@ -1136,40 +1138,40 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] min, byte[] max) {
-        return execCmd(listConverter, ZREVRANGEBYLEX, key, min, max);
+    public Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] max, byte[] min) {
+        return execCmd(listConverter, ZREVRANGEBYLEX, key, max, min);
     }
 
     @Override
-    public Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] min, byte[] max, long offset,
+    public Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] max, byte[] min, long offset,
             long count) {
-        return execCmd(listConverter, ZREVRANGEBYLEX, key, min, max, LIMIT.raw, toBytes(offset),
+        return execCmd(listConverter, ZREVRANGEBYLEX, key, max, min, LIMIT.raw, toBytes(offset),
                 toBytes(count));
     }
 
     @Override
-    public Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] min, byte[] max) {
-        return execCmd(listConverter, ZREVRANGEBYSCORE, key, min, max);
+    public Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] max, byte[] min) {
+        return execCmd(listConverter, ZREVRANGEBYSCORE, key, max, min);
     }
 
     @Override
-    public Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] min, byte[] max, long offset,
+    public Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] max, byte[] min, long offset,
             long count) {
-        return execCmd(listConverter, ZREVRANGEBYSCORE, key, min, max, LIMIT.raw, toBytes(offset),
+        return execCmd(listConverter, ZREVRANGEBYSCORE, key, max, min, LIMIT.raw, toBytes(offset),
                 toBytes(count));
     }
 
     @Override
-    public Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] min,
-            byte[] max) {
-        return execCmd(sortedSetEntryListConverter, ZREVRANGEBYSCORE, key, min, max, WITHSCORES.raw);
+    public Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] max,
+            byte[] min) {
+        return execCmd(sortedSetEntryListConverter, ZREVRANGEBYSCORE, key, max, min, WITHSCORES.raw);
     }
 
     @Override
-    public Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] min,
-            byte[] max, long offset, long count) {
-        return execCmd(sortedSetEntryListConverter, ZRANGEBYSCORE, key, min, max, WITHSCORES.raw,
-                LIMIT.raw, toBytes(offset), toBytes(count));
+    public Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] max,
+            byte[] min, long offset, long count) {
+        return execCmd(sortedSetEntryListConverter, ZREVRANGEBYSCORE, key, max, min,
+                WITHSCORES.raw, LIMIT.raw, toBytes(offset), toBytes(count), WITHSCORES.raw);
     }
 
     @Override
@@ -1196,11 +1198,11 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Long> zunionstore(byte[] dst, ZSetOpParams params) {
-        return execCmd(longConverter, ZINTERSTORE, toZSetOpParams(dst, params));
+        return execCmd(longConverter, ZUNIONSTORE, toZSetOpParams(dst, params));
     }
 
     @Override
-    public Future<Long> zuniontore(byte[] dst, byte[]... keys) {
+    public Future<Long> zunionstore(byte[] dst, byte[]... keys) {
         return execCmd(longConverter, ZUNIONSTORE, toParamsReverse(keys, dst));
     }
 }
