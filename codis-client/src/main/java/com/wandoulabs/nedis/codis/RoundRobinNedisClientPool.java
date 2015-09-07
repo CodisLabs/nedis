@@ -298,7 +298,7 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
         }
 
         private void validate() {
-            poolBuilder.createGroupIfNecessary();
+            poolBuilder.validateGroupConfig();
             if (zkProxyDir == null) {
                 throw new IllegalArgumentException("zkProxyDir can not be null");
             }

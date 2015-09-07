@@ -15,21 +15,15 @@
  */
 package com.wandoulabs.nedis;
 
-import io.netty.bootstrap.Bootstrap;
+import static com.wandoulabs.nedis.util.NedisUtils.getEventExecutor;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 
-import java.util.concurrent.TimeUnit;
+import java.net.SocketAddress;
 
-import com.wandoulabs.nedis.handler.RedisDuplexHandler;
-import com.wandoulabs.nedis.handler.RedisRequestEncoder;
-import com.wandoulabs.nedis.handler.RedisResponseDecoder;
 import com.wandoulabs.nedis.util.NedisClientHashSet;
 
 /**
@@ -37,7 +31,13 @@ import com.wandoulabs.nedis.util.NedisClientHashSet;
  */
 public class NedisClientPoolImpl implements NedisClientPool {
 
-    private final Bootstrap bootstrap;
+    private final EventLoopGroup group;
+
+    private final Class<? extends Channel> channelClass;
+
+    private final long timeoutMs;
+
+    private final SocketAddress remoteAddress;
 
     private final byte[] password;
 
@@ -57,28 +57,20 @@ public class NedisClientPoolImpl implements NedisClientPool {
 
     private boolean closed = false;
 
-    public NedisClientPoolImpl(Bootstrap bootstrap, final long timeoutMs, byte[] password,
-            int database, byte[] clientName, int maxPooledConns, boolean exclusive) {
-        this.bootstrap = bootstrap.handler(new ChannelInitializer<Channel>() {
-
-            @Override
-            protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline().addLast(new RedisRequestEncoder(), new RedisResponseDecoder(),
-                        new RedisDuplexHandler(TimeUnit.MILLISECONDS.toNanos(timeoutMs)));
-            }
-
-        });
-        if (timeoutMs > 0) {
-            this.bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                    (int) Math.min(Integer.MAX_VALUE, timeoutMs));
-        }
+    public NedisClientPoolImpl(EventLoopGroup group, Class<? extends Channel> channelClass,
+            long timeoutMs, SocketAddress remoteAddress, byte[] password, int database,
+            byte[] clientName, int maxPooledConns, boolean exclusive) {
+        this.group = group;
+        this.channelClass = channelClass;
+        this.timeoutMs = timeoutMs;
+        this.remoteAddress = remoteAddress;
         this.password = password;
         this.database = database;
         this.clientName = clientName;
         this.maxPooledConns = maxPooledConns;
         this.exclusive = exclusive;
         this.pool = new NedisClientHashSet(maxPooledConns);
-        this.closePromise = bootstrap.group().next().newPromise();
+        this.closePromise = group.next().newPromise();
     }
 
     private final class InitializeFutureListener implements FutureListener<Void> {
@@ -146,19 +138,21 @@ public class NedisClientPoolImpl implements NedisClientPool {
     }
 
     private Future<NedisClient> newClient() {
-        ChannelFuture f = bootstrap.connect();
-        final Promise<NedisClient> promise = f.channel().eventLoop().newPromise();
-        f.addListener(new ChannelFutureListener() {
+        Future<NedisClientImpl> f = NedisClientBuilder.create().group(group).channel(channelClass)
+                .timeoutMs(timeoutMs).belongTo(this).connect(remoteAddress);
+
+        final Promise<NedisClient> promise = getEventExecutor(f).newPromise();
+        f.addListener(new FutureListener<NedisClientImpl>() {
 
             @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
+            public void operationComplete(Future<NedisClientImpl> future) throws Exception {
                 if (future.isSuccess()) {
-                    initialize(promise, new NedisClientImpl(future.channel(),
-                            NedisClientPoolImpl.this), State.AUTH);
+                    initialize(promise, future.getNow(), State.AUTH);
                 } else {
                     promise.tryFailure(future.cause());
                 }
             }
+
         });
         return promise;
     }
@@ -204,8 +198,8 @@ public class NedisClientPoolImpl implements NedisClientPool {
     public Future<NedisClient> acquire() {
         synchronized (pool) {
             if (closed) {
-                return bootstrap.group().next()
-                        .<NedisClient>newFailedFuture(new IllegalStateException("already closed"));
+                return group.next().<NedisClient>newFailedFuture(
+                        new IllegalStateException("already closed"));
             }
             if (numConns < maxPooledConns) {
                 numConns++;
@@ -261,6 +255,11 @@ public class NedisClientPoolImpl implements NedisClientPool {
     }
 
     @Override
+    public Future<Void> closeFuture() {
+        return closePromise;
+    }
+
+    @Override
     public boolean exclusive() {
         return exclusive;
     }
@@ -278,10 +277,4 @@ public class NedisClientPoolImpl implements NedisClientPool {
             return pool.size();
         }
     }
-
-    @Override
-    public Future<Void> closeFuture() {
-        return closePromise;
-    }
-
 }

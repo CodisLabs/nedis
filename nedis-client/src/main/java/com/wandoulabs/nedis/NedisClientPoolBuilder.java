@@ -16,38 +16,19 @@
 package com.wandoulabs.nedis;
 
 import static com.wandoulabs.nedis.util.NedisUtils.toBytes;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import org.apache.commons.lang3.tuple.Pair;
+import com.wandoulabs.nedis.util.AbstractNedisBuilder;
 
 /**
  * @author Apache9
  */
-public class NedisClientPoolBuilder {
-
-    private static Pair<EventLoopGroup, Class<? extends Channel>> DEFAULT_EVENT_LOOP_CONFIG;
-
-    private static synchronized Pair<EventLoopGroup, Class<? extends Channel>> defaultEventLoopConfig() {
-        if (DEFAULT_EVENT_LOOP_CONFIG == null) {
-            DEFAULT_EVENT_LOOP_CONFIG = Pair.<EventLoopGroup, Class<? extends Channel>>of(
-                    new NioEventLoopGroup(), NioSocketChannel.class);
-        }
-        return DEFAULT_EVENT_LOOP_CONFIG;
-    }
-
-    private EventLoopGroup group;
-
-    private Class<? extends Channel> channelClass;
-
-    private long timeoutMs;
+public class NedisClientPoolBuilder extends AbstractNedisBuilder {
 
     private byte[] password;
 
@@ -62,22 +43,21 @@ public class NedisClientPoolBuilder {
 
     private SocketAddress remoteAddress;
 
+    @Override
     public NedisClientPoolBuilder group(EventLoopGroup group) {
-        this.group = group;
+        super.group(group);
         return this;
     }
 
-    public EventLoopGroup group() {
-        return group;
-    }
-
+    @Override
     public NedisClientPoolBuilder channel(Class<? extends Channel> channelClass) {
-        this.channelClass = channelClass;
+        super.channel(channelClass);
         return this;
     }
 
+    @Override
     public NedisClientPoolBuilder timeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
+        super.timeoutMs(timeoutMs);
         return this;
     }
 
@@ -123,38 +103,20 @@ public class NedisClientPoolBuilder {
         return this;
     }
 
-    public NedisClientPoolBuilder createGroupIfNecessary() {
-        if (group == null && channelClass != null) {
-            throw new IllegalArgumentException("group is null but channel is not");
-        }
-        if (channelClass == null && group != null) {
-            throw new IllegalArgumentException("channel is null but group is not");
-        }
-        if (group == null) {
-            Pair<EventLoopGroup, Class<? extends Channel>> defaultEventLoopConfig = defaultEventLoopConfig();
-            group = defaultEventLoopConfig.getLeft();
-            channelClass = defaultEventLoopConfig.getRight();
-        }
-        return this;
-    }
-
     private void validate() {
-        createGroupIfNecessary();
+        validateGroupConfig();
         if (remoteAddress == null) {
             throw new IllegalArgumentException("remoteAddress is not set");
         }
     }
 
-    public NedisClientPool build() {
+    public NedisClientPoolImpl build() {
         validate();
-        return new NedisClientPoolImpl(new Bootstrap().group(group).channel(channelClass)
-                .remoteAddress(remoteAddress), timeoutMs, password, database, clientName,
-                maxPooledConns, exclusive);
+        return new NedisClientPoolImpl(group, channelClass, timeoutMs, remoteAddress, password,
+                database, clientName, maxPooledConns, exclusive);
     }
 
-    private NedisClientPoolBuilder() {}
-
-    public static NedisClientPoolBuilder builder() {
+    public static NedisClientPoolBuilder create() {
         return new NedisClientPoolBuilder();
     }
 }

@@ -71,7 +71,7 @@ public class TestCommands {
         REDIS = new RedisServer(PORT);
         REDIS.start();
         waitUntilRedisUp(PORT);
-        CLIENT = NedisUtils.newPooledClient(NedisClientPoolBuilder.builder()
+        CLIENT = NedisUtils.newPooledClient(NedisClientPoolBuilder.create()
                 .remoteAddress("127.0.0.1", PORT).build());
     }
 
@@ -84,7 +84,7 @@ public class TestCommands {
     }
 
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws InterruptedException, IOException {
         cleanRedis(PORT);
     }
 

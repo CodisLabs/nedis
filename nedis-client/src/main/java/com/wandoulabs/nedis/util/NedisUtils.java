@@ -15,6 +15,10 @@
  */
 package com.wandoulabs.nedis.util;
 
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
@@ -34,6 +38,8 @@ import java.util.TreeSet;
 
 import javax.naming.OperationNotSupportedException;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.wandoulabs.nedis.AsyncCloseable;
 import com.wandoulabs.nedis.ConnectionManagement;
 import com.wandoulabs.nedis.NedisClient;
@@ -45,6 +51,8 @@ import com.wandoulabs.nedis.protocol.TransactionsCommands;
  * @author Apache9
  */
 public class NedisUtils {
+
+    public static final int DEFAULT_REDIS_PORT = 6379;
 
     public static byte[] toBytes(double value) {
         return toBytes(Double.toString(value));
@@ -96,7 +104,7 @@ public class NedisUtils {
         return params;
     }
 
-    private static EventExecutor getEventExecutor(Future<?> future) {
+    public static EventExecutor getEventExecutor(Future<?> future) {
         Class<?> clazz = future.getClass();
         for (;;) {
             try {
@@ -260,5 +268,15 @@ public class NedisUtils {
 
     public static Set<byte[]> newBytesSet() {
         return new TreeSet<byte[]>(BYTES_COMPARATOR);
+    }
+
+    private static Pair<EventLoopGroup, Class<? extends Channel>> DEFAULT_EVENT_LOOP_CONFIG;
+
+    public static synchronized Pair<EventLoopGroup, Class<? extends Channel>> defaultEventLoopConfig() {
+        if (DEFAULT_EVENT_LOOP_CONFIG == null) {
+            DEFAULT_EVENT_LOOP_CONFIG = Pair.<EventLoopGroup, Class<? extends Channel>>of(
+                    new NioEventLoopGroup(), NioSocketChannel.class);
+        }
+        return DEFAULT_EVENT_LOOP_CONFIG;
     }
 }

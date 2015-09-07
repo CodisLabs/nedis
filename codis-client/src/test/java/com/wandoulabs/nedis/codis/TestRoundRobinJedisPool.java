@@ -160,7 +160,7 @@ public class TestRoundRobinJedisPool {
         redis2.start();
         waitUntilRedisUp(redisPort2);
 
-        NedisClientPoolBuilder poolBuilder = NedisClientPoolBuilder.builder();
+        NedisClientPoolBuilder poolBuilder = NedisClientPoolBuilder.create();
 
         client1 = NedisUtils.newPooledClient(poolBuilder.remoteAddress("localhost", redisPort1)
                 .build());

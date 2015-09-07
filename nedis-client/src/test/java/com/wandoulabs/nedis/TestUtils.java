@@ -35,30 +35,36 @@ public class TestUtils {
         }
     }
 
-    public static void cleanRedis(int port) {
-        NedisClientPool pool = NedisClientPoolBuilder.builder().remoteAddress("127.0.0.1", port)
-                .build();
-        NedisClient client = pool.acquire().syncUninterruptibly().getNow();
-        List<byte[]> keys = client.keys(toBytes("*")).syncUninterruptibly().getNow();
-        if (!keys.isEmpty()) {
-            client.del(keys.toArray(new byte[0][])).syncUninterruptibly();
+    public static void cleanRedis(int port) throws IOException, InterruptedException {
+        NedisClient client = NedisClientBuilder.create().timeoutMs(100).connect("127.0.0.1", port)
+                .sync().getNow();
+        try {
+            List<byte[]> keys = client.keys(toBytes("*")).sync().getNow();
+            if (!keys.isEmpty()) {
+                client.del(keys.toArray(new byte[0][])).sync();
+            }
+        } finally {
+            client.close().sync();
         }
-        pool.close().syncUninterruptibly();
+
     }
 
     public static void waitUntilRedisUp(int port) throws InterruptedException {
-        NedisClientPool pool = NedisClientPoolBuilder.builder().remoteAddress("127.0.0.1", port)
-                .maxPooledConns(1).timeoutMs(100).build();
         for (;;) {
+            NedisClient client = null;
             try {
-                if ("PONG".equals(pool.acquire().syncUninterruptibly().getNow().ping()
-                        .syncUninterruptibly().getNow())) {
+                client = NedisClientBuilder.create().timeoutMs(100).connect("127.0.0.1", port)
+                        .sync().getNow();
+                if ("PONG".equals(client.ping().sync().getNow())) {
                     break;
                 }
             } catch (Exception e) {
                 Thread.sleep(200);
+            } finally {
+                if (client != null) {
+                    client.close().sync();
+                }
             }
         }
-        pool.close().syncUninterruptibly();
     }
 }

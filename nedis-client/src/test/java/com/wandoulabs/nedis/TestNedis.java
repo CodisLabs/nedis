@@ -71,7 +71,7 @@ public class TestNedis {
     }
 
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws InterruptedException, IOException {
         if (pool != null) {
             pool.close();
         }
@@ -80,7 +80,7 @@ public class TestNedis {
 
     @Test
     public void test() throws InterruptedException, ExecutionException {
-        pool = NedisClientPoolBuilder.builder()
+        pool = NedisClientPoolBuilder.create()
                 .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).clientName("test").build();
         NedisClient client = NedisUtils.newPooledClient(pool);
         System.out.println(client.toString());
@@ -131,7 +131,7 @@ public class TestNedis {
 
     @Test
     public void testTimeout() throws InterruptedException {
-        pool = NedisClientPoolBuilder.builder()
+        pool = NedisClientPoolBuilder.create()
                 .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).database(1).build();
         NedisClient client = pool.acquire().sync().getNow();
         assertEquals(1, pool.numPooledConns());
@@ -147,7 +147,7 @@ public class TestNedis {
 
     @Test
     public void testBlockingCommands() throws InterruptedException {
-        pool = NedisClientPoolBuilder.builder()
+        pool = NedisClientPoolBuilder.create()
                 .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).timeoutMs(100)
                 .exclusive(true).build();
         NedisClient client = NedisUtils.newPooledClient(pool);
@@ -233,7 +233,7 @@ public class TestNedis {
 
     @Test
     public void testTxn() throws InterruptedException {
-        pool = NedisClientPoolBuilder.builder()
+        pool = NedisClientPoolBuilder.create()
                 .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).exclusive(true).build();
         NedisClient client = pool.acquire().sync().getNow();
         NedisClient client2 = pool.acquire().sync().getNow();
