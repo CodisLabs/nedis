@@ -21,9 +21,12 @@ import static com.wandoulabs.nedis.TestUtils.waitUntilRedisUp;
 import static com.wandoulabs.nedis.protocol.RedisCommand.GET;
 import static com.wandoulabs.nedis.util.NedisUtils.bytesToString;
 import static com.wandoulabs.nedis.util.NedisUtils.toBytes;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.concurrent.Future;
@@ -38,9 +41,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.wandoulabs.nedis.NedisClient;
-import com.wandoulabs.nedis.NedisClientPool;
-import com.wandoulabs.nedis.NedisClientPoolBuilder;
 import com.wandoulabs.nedis.exception.RedisResponseException;
 import com.wandoulabs.nedis.exception.TxnAbortException;
 import com.wandoulabs.nedis.exception.TxnDiscardException;
@@ -134,6 +134,7 @@ public class TestNedis {
         pool = NedisClientPoolBuilder.create()
                 .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).database(1).build();
         NedisClient client = pool.acquire().sync().getNow();
+        Thread.sleep(1000);
         assertEquals(1, pool.numPooledConns());
         assertEquals(1, pool.numConns());
         assertEquals(0L, client.setTimeout(100).sync().getNow().longValue());
@@ -203,8 +204,10 @@ public class TestNedis {
         assertEquals("v2", bytesToString(chkClient.get(toBytes("k2")).sync().getNow()));
         txnClient.discard().sync();
         assertTrue(multiFuture.isDone());
-        assertTrue(setFuture1.cause() instanceof TxnDiscardException);
-        assertTrue(setFuture2.cause() instanceof TxnDiscardException);
+        assertTrue(setFuture1.isDone());
+        assertTrue(setFuture2.isDone());
+        assertThat(setFuture1.cause(), is(instanceOf(TxnDiscardException.class)));
+        assertThat(setFuture2.cause(), is(instanceOf(TxnDiscardException.class)));
         assertEquals("v1", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
         assertEquals("v2", bytesToString(chkClient.get(toBytes("k2")).sync().getNow()));
 
@@ -219,14 +222,15 @@ public class TestNedis {
         assertEquals("OK", execResult.get(0).toString());
         assertEquals("v3", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
 
-        watchFuture = txnClient.watch(toBytes("k1"));
+        txnClient.watch(toBytes("k1")).sync();
         multiFuture = txnClient.multi();
         setFuture1 = txnClient.set(toBytes("k1"), toBytes("v4"));
-        chkClient.set(toBytes("k1"), toBytes("v1")).sync().getNow();
+        assertTrue(chkClient.set(toBytes("k1"), toBytes("v1")).sync().getNow().booleanValue());
         execResult = txnClient.exec().sync().getNow();
         assertTrue(watchFuture.isDone());
         assertTrue(multiFuture.isDone());
-        assertTrue(setFuture1.cause() instanceof TxnAbortException);
+        assertTrue(setFuture1.isDone());
+        assertThat(setFuture1.cause(), is(instanceOf(TxnAbortException.class)));
         assertNull(execResult);
         assertEquals("v1", bytesToString(chkClient.get(toBytes("k1")).sync().getNow()));
     }

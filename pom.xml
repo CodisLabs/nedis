@@ -9,6 +9,12 @@
     <name>nedis</name>
     <description>Redis client based on netty</description>
     <url>https://github.com/wandoulabs/nedis</url>
+    <scm>
+        <connection>scm:git:ssh://github.com:wandoulabs/nedis.git</connection>
+        <developerConnection>scm:git:ssh://github.com:wandoulabs/nedis.git</developerConnection>
+        <url>ssh://github.com:wandoulabs/nedis.git</url>
+        <tag>HEAD</tag>
+    </scm>
     <modules>
         <module>nedis-client</module>
         <module>codis-client</module>
@@ -22,7 +28,6 @@
         <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
         <maven.compile.encoding>UTF-8</maven.compile.encoding>
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -88,7 +93,16 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     <build>
         <plugins>
             <plugin>
@@ -99,6 +113,31 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <encoding>${app.encoding}</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.5</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
                 </configuration>
             </plugin>
             <plugin>
@@ -183,5 +222,22 @@
             </plugin>
         </plugins>
     </build>
-
+    <licenses>
+        <license>
+            <name>Apache License</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>apache9</id>
+            <name>Apache9</name>
+            <email>palomino219@gmail.com</email>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
 </project>
