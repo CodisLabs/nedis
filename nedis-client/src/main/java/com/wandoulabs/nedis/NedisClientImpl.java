@@ -15,6 +15,8 @@
  */
 package com.wandoulabs.nedis;
 
+import static com.wandoulabs.nedis.handler.RedisRequestEncoder.encode;
+import static com.wandoulabs.nedis.handler.RedisRequestEncoder.encodeReverse;
 import static com.wandoulabs.nedis.protocol.RedisCommand.*;
 import static com.wandoulabs.nedis.protocol.RedisKeyword.BY;
 import static com.wandoulabs.nedis.protocol.RedisKeyword.COUNT;
@@ -36,8 +38,8 @@ import static com.wandoulabs.nedis.protocol.RedisKeyword.STORE;
 import static com.wandoulabs.nedis.protocol.RedisKeyword.WITHSCORES;
 import static com.wandoulabs.nedis.protocol.RedisKeyword.XX;
 import static com.wandoulabs.nedis.util.NedisUtils.toBytes;
-import static com.wandoulabs.nedis.util.NedisUtils.toParams;
 import static com.wandoulabs.nedis.util.NedisUtils.toParamsReverse;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoop;
@@ -132,7 +134,7 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Long> append(byte[] key, byte[] value) {
-        return execCmd(longConverter, APPEND, key, value);
+        return execCmd(longConverter, encode(channel.alloc(), APPEND.raw, key, value));
     }
 
     @Override
@@ -146,78 +148,88 @@ public class NedisClientImpl implements NedisClient {
     }
 
     Future<Void> auth0(byte[] password) {
-        return execCmd(voidConverter, AUTH, password);
+        return execCmd(voidConverter, encode(channel.alloc(), AUTH.raw, password));
     }
 
     @Override
     public Future<Void> bgrewriteaof() {
-        return execCmd(voidConverter, BGREWRITEAOF);
+        return execCmd(voidConverter, encode(channel.alloc(), BGREWRITEAOF.raw));
     }
 
     @Override
     public Future<Void> bgsave() {
-        return execCmd(voidConverter, BGSAVE);
+        return execCmd(voidConverter, encode(channel.alloc(), BGSAVE.raw));
     }
 
     @Override
     public Future<Long> bitcount(byte[] key) {
-        return execCmd(longConverter, BITCOUNT, key);
+        return execCmd(longConverter, encode(channel.alloc(), BITCOUNT.raw, key));
     }
 
     @Override
     public Future<Long> bitcount(byte[] key, long startInclusive, long endInclusive) {
-        return execCmd(longConverter, BITCOUNT, toBytes(startInclusive), toBytes(endInclusive));
+        return execCmd(
+                longConverter,
+                encode(channel.alloc(), BITCOUNT.raw, toBytes(startInclusive),
+                        toBytes(endInclusive)));
     }
 
     @Override
     public Future<Long> bitop(BitOp op, byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, BITOP, toParamsReverse(keys, op.raw, dst));
+        return execCmd(longConverter,
+                encode(channel.alloc(), BITOP.raw, toParamsReverse(keys, op.raw, dst)));
     }
 
     @Override
     public Future<Long> bitpos(byte[] key, boolean bit) {
-        return execCmd(longConverter, BITPOS, key, toBytes(bit));
+        return execCmd(longConverter, encode(channel.alloc(), BITPOS.raw, key, toBytes(bit)));
     }
 
     @Override
     public Future<Long> bitpos(byte[] key, boolean bit, long startInclusive) {
-        return execCmd(longConverter, BITPOS, key, toBytes(bit), toBytes(startInclusive));
+        return execCmd(longConverter,
+                encode(channel.alloc(), BITPOS.raw, key, toBytes(bit), toBytes(startInclusive)));
     }
 
     @Override
     public Future<Long> bitpos(byte[] key, boolean bit, long startInclusive, long endInclusive) {
-        return execCmd(longConverter, BITPOS, key, toBytes(bit), toBytes(startInclusive),
-                toBytes(endInclusive));
+        return execCmd(
+                longConverter,
+                encode(channel.alloc(), BITPOS.raw, key, toBytes(bit), toBytes(startInclusive),
+                        toBytes(endInclusive)));
     }
 
     @Override
     public Future<List<byte[]>> blpop(long timeoutSeconds, byte[]... keys) {
-        return execCmd(listConverter, BLPOP, toParams(keys, toBytes(timeoutSeconds)));
+        return execCmd(listConverter,
+                encode(channel.alloc(), BLPOP.raw, keys, toBytes(timeoutSeconds)));
     }
 
     @Override
     public Future<List<byte[]>> brpop(long timeoutSeconds, byte[]... keys) {
-        return execCmd(listConverter, BRPOP, toParams(keys, toBytes(timeoutSeconds)));
+        return execCmd(listConverter,
+                encode(channel.alloc(), BRPOP.raw, keys, toBytes(timeoutSeconds)));
     }
 
     @Override
     public Future<byte[]> brpoplpush(byte[] src, byte[] dst, long timeoutSeconds) {
-        return execCmd(bytesConverter, BRPOPLPUSH, src, dst, toBytes(timeoutSeconds));
+        return execCmd(bytesConverter,
+                encode(channel.alloc(), BRPOPLPUSH.raw, src, dst, toBytes(timeoutSeconds)));
     }
 
     @Override
     public Future<byte[]> clientGetname() {
-        return execCmd(bytesConverter, CLIENT, GETNAME.raw);
+        return execCmd(bytesConverter, encode(channel.alloc(), CLIENT.raw, GETNAME.raw));
     }
 
     @Override
     public Future<Void> clientKill(byte[] addr) {
-        return execCmd(voidConverter, CLIENT, KILL.raw);
+        return execCmd(voidConverter, encode(channel.alloc(), CLIENT.raw, KILL.raw));
     }
 
     @Override
     public Future<byte[]> clientList() {
-        return execCmd(bytesConverter, CLIENT, LIST.raw);
+        return execCmd(bytesConverter, encode(channel.alloc(), CLIENT.raw, LIST.raw));
     }
 
     @Override
@@ -231,7 +243,7 @@ public class NedisClientImpl implements NedisClient {
     }
 
     Future<Void> clientSetname0(byte[] name) {
-        return execCmd(voidConverter, CLIENT, SETNAME.raw, name);
+        return execCmd(voidConverter, encode(channel.alloc(), CLIENT.raw, SETNAME.raw, name));
     }
 
     @Override
@@ -246,42 +258,42 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<List<byte[]>> configGet(byte[] pattern) {
-        return execCmd(listConverter, CONFIG, RedisKeyword.GET.raw);
+        return execCmd(listConverter, encode(channel.alloc(), CONFIG.raw, RedisKeyword.GET.raw));
     }
 
     @Override
     public Future<Void> configResetstat() {
-        return execCmd(voidConverter, CONFIG, RESETSTAT.raw);
+        return execCmd(voidConverter, encode(channel.alloc(), CONFIG.raw, RESETSTAT.raw));
     }
 
     @Override
     public Future<Void> configRewrite() {
-        return execCmd(voidConverter, CONFIG, REWRITE.raw);
+        return execCmd(voidConverter, encode(channel.alloc(), CONFIG.raw, REWRITE.raw));
     }
 
     @Override
     public Future<Void> configSet(byte[] name, byte[] value) {
-        return execCmd(voidConverter, CONFIG, RedisKeyword.SET.raw);
+        return execCmd(voidConverter, encode(channel.alloc(), CONFIG.raw, RedisKeyword.SET.raw));
     }
 
     @Override
     public Future<Long> dbsize() {
-        return execCmd(longConverter, DBSIZE);
+        return execCmd(longConverter, encode(channel.alloc(), DBSIZE.raw));
     }
 
     @Override
     public Future<Long> decr(byte[] key) {
-        return execCmd(longConverter, DECR, key);
+        return execCmd(longConverter, encode(channel.alloc(), DECR.raw, key));
     }
 
     @Override
     public Future<Long> decrby(byte[] key, long delta) {
-        return execCmd(longConverter, DECRBY, key, toBytes(delta));
+        return execCmd(longConverter, encode(channel.alloc(), DECRBY.raw, key, toBytes(delta)));
     }
 
     @Override
     public Future<Long> del(byte[]... keys) {
-        return execCmd(longConverter, DEL, keys);
+        return execCmd(longConverter, encode(channel.alloc(), DEL.raw, keys));
     }
 
     @Override
@@ -291,23 +303,24 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<byte[]> dump(byte[] key) {
-        return execCmd(bytesConverter, DUMP, key);
+        return execCmd(bytesConverter, encode(channel.alloc(), DUMP.raw, key));
     }
 
     @Override
     public Future<byte[]> echo(byte[] msg) {
-        return execCmd(bytesConverter, ECHO, msg);
+        return execCmd(bytesConverter, encode(channel.alloc(), ECHO.raw, msg));
     }
 
     @Override
     public Future<Object> eval(byte[] script, int numKeys, byte[]... keysvalues) {
-        return execCmd(objectConverter, EVAL, toParamsReverse(keysvalues, script, toBytes(numKeys)));
+        return execCmd(objectConverter,
+                encodeReverse(channel.alloc(), EVAL.raw, keysvalues, script, toBytes(numKeys)));
     }
 
     @Override
     public Future<Object> evalsha(byte[] sha1, int numKeys, byte[]... keysvalues) {
-        return execCmd(objectConverter, EVALSHA,
-                toParamsReverse(keysvalues, sha1, toBytes(numKeys)));
+        return execCmd(objectConverter,
+                encodeReverse(channel.alloc(), EVALSHA.raw, keysvalues, sha1, toBytes(numKeys)));
     }
 
     @Override
@@ -322,22 +335,18 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Object> execCmd(byte[] cmd, byte[]... params) {
-        return execCmd(objectConverter, cmd, params);
+        return execCmd(objectConverter, encode(channel.alloc(), cmd, params));
     }
 
-    private <T> Future<T> execCmd(PromiseConverter<T> converter, byte[] cmd, byte[]... params) {
+    private <T> Future<T> execCmd(PromiseConverter<T> converter, ByteBuf buf) {
         Promise<T> promise = converter.newPromise();
-        execCmd0(cmd, params).addListener(converter.newListener(promise));
+        execCmd0(buf).addListener(converter.newListener(promise));
         return promise;
     }
 
-    private <T> Future<T> execCmd(PromiseConverter<T> converter, RedisCommand cmd, byte[]... params) {
-        return execCmd(converter, cmd.raw, params);
-    }
-
-    private Future<Object> execCmd0(byte[] cmd, byte[]... params) {
+    private Future<Object> execCmd0(ByteBuf buf) {
         Promise<Object> promise = eventLoop().newPromise();
-        RedisRequest req = new RedisRequest(promise, toParamsReverse(params, cmd));
+        RedisRequest req = new RedisRequest(promise, buf);
         channel.writeAndFlush(req);
         return promise;
     }
@@ -357,7 +366,7 @@ public class NedisClientImpl implements NedisClient {
             p.add(COUNT.raw);
             p.add(toBytes(params.count()));
         }
-        return execCmd(converter, cmd, p.toArray(new byte[0][]));
+        return execCmd(converter, encode(channel.alloc(), cmd.raw, p));
     }
 
     private <T> Future<T> execTxnCmd(PromiseConverter<T> converter, RedisCommand cmd) {
@@ -370,93 +379,98 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Boolean> exists(byte[] key) {
-        return execCmd(booleanConverter, EXISTS, key);
+        return execCmd(booleanConverter, encode(channel.alloc(), EXISTS.raw, key));
     }
 
     @Override
     public Future<Boolean> expire(byte[] key, long seconds) {
-        return execCmd(booleanConverter, EXPIRE, key, toBytes(seconds));
+        return execCmd(booleanConverter, encode(channel.alloc(), EXPIRE.raw, key, toBytes(seconds)));
     }
 
     @Override
     public Future<Boolean> expireat(byte[] key, long unixTimeSeconds) {
-        return execCmd(booleanConverter, EXPIREAT, key, toBytes(unixTimeSeconds));
+        return execCmd(booleanConverter,
+                encode(channel.alloc(), EXPIREAT.raw, key, toBytes(unixTimeSeconds)));
     }
 
     @Override
     public Future<Void> flushall() {
-        return execCmd(voidConverter, FLUSHALL);
+        return execCmd(voidConverter, encode(channel.alloc(), FLUSHALL.raw));
     }
 
     @Override
     public Future<Void> flushdb() {
-        return execCmd(voidConverter, FLUSHDB);
+        return execCmd(voidConverter, encode(channel.alloc(), FLUSHDB.raw));
     }
 
     @Override
     public Future<byte[]> get(byte[] key) {
-        return execCmd(bytesConverter, GET, key);
+        return execCmd(bytesConverter, encode(channel.alloc(), GET.raw, key));
     }
 
     @Override
     public Future<Boolean> getbit(byte[] key, long offset) {
-        return execCmd(booleanConverter, GETBIT, key, toBytes(offset));
+        return execCmd(booleanConverter, encode(channel.alloc(), GETBIT.raw, key, toBytes(offset)));
     }
 
     @Override
     public Future<byte[]> getrange(byte[] key, long startInclusive, long endInclusive) {
-        return execCmd(bytesConverter, GETRANGE, key, toBytes(startInclusive),
-                toBytes(endInclusive));
+        return execCmd(
+                bytesConverter,
+                encode(channel.alloc(), GETRANGE.raw, key, toBytes(startInclusive),
+                        toBytes(endInclusive)));
     }
 
     @Override
     public Future<byte[]> getset(byte[] key, byte[] value) {
-        return execCmd(bytesConverter, GETSET, key, value);
+        return execCmd(bytesConverter, encode(channel.alloc(), GETSET.raw, key, value));
     }
 
     @Override
     public Future<Long> hdel(byte[] key, byte[]... fields) {
-        return execCmd(longConverter, HDEL, toParamsReverse(fields, key));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), HDEL.raw, fields, key));
     }
 
     @Override
     public Future<Boolean> hexists(byte[] key, byte[] field) {
-        return execCmd(booleanConverter, HEXISTS, key, field);
+        return execCmd(booleanConverter, encode(channel.alloc(), HEXISTS.raw, key, field));
     }
 
     @Override
     public Future<byte[]> hget(byte[] key, byte[] field) {
-        return execCmd(bytesConverter, HGET, key, field);
+        return execCmd(bytesConverter, encode(channel.alloc(), HGET.raw, key, field));
     }
 
     @Override
     public Future<Map<byte[], byte[]>> hgetall(byte[] key) {
-        return execCmd(mapConverter, HGETALL, key);
+        return execCmd(mapConverter, encode(channel.alloc(), HGETALL.raw, key));
     }
 
     @Override
     public Future<Long> hincrby(byte[] key, byte[] field, long delta) {
-        return execCmd(longConverter, HINCRBY, key, field, toBytes(delta));
+        return execCmd(longConverter,
+                encode(channel.alloc(), HINCRBY.raw, key, field, toBytes(delta)));
     }
 
     @Override
     public Future<Double> hincrbyfloat(byte[] key, byte[] field, double delta) {
-        return execCmd(doubleConverter, HINCRBYFLOAT, key, field, toBytes(delta));
+        return execCmd(doubleConverter,
+                encode(channel.alloc(), HINCRBYFLOAT.raw, key, field, toBytes(delta)));
     }
 
     @Override
     public Future<List<byte[]>> hkeys(byte[] key) {
-        return execCmd(listConverter, HKEYS, key);
+        return execCmd(listConverter, encode(channel.alloc(), HKEYS.raw, key));
     }
 
     @Override
     public Future<Long> hlen(byte[] key) {
-        return execCmd(longConverter, HLEN, key);
+        return execCmd(longConverter, encode(channel.alloc(), HLEN.raw, key));
     }
 
     @Override
     public Future<List<byte[]>> hmget(byte[] key, byte[]... fields) {
-        return execCmd(listConverter, HMGET, toParamsReverse(fields, key));
+        return execCmd(listConverter, encodeReverse(channel.alloc(), HMGET.raw, fields, key));
     }
 
     @Override
@@ -468,7 +482,7 @@ public class NedisClientImpl implements NedisClient {
             params[i++] = e.getKey();
             params[i++] = e.getValue();
         }
-        return execCmd(voidConverter, HMSET, params);
+        return execCmd(voidConverter, encode(channel.alloc(), HMSET.raw, params));
     }
 
     @Override
@@ -478,42 +492,43 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Boolean> hset(byte[] key, byte[] field, byte[] value) {
-        return execCmd(booleanConverter, HSET, key, field, value);
+        return execCmd(booleanConverter, encode(channel.alloc(), HSET.raw, key, field, value));
     }
 
     @Override
     public Future<Boolean> hsetnx(byte[] key, byte[] field, byte[] value) {
-        return execCmd(booleanConverter, HSETNX, key, field, value);
+        return execCmd(booleanConverter, encode(channel.alloc(), HSETNX.raw, key, field, value));
     }
 
     @Override
     public Future<List<byte[]>> hvals(byte[] key) {
-        return execCmd(listConverter, HVALS, key);
+        return execCmd(listConverter, encode(channel.alloc(), HVALS.raw, key));
     }
 
     @Override
     public Future<Long> incr(byte[] key) {
-        return execCmd(longConverter, INCR, key);
+        return execCmd(longConverter, encode(channel.alloc(), INCR.raw, key));
     }
 
     @Override
     public Future<Long> incrby(byte[] key, long delta) {
-        return execCmd(longConverter, INCRBY, key, toBytes(delta));
+        return execCmd(longConverter, encode(channel.alloc(), INCRBY.raw, key, toBytes(delta)));
     }
 
     @Override
     public Future<Double> incrbyfloat(byte[] key, double delta) {
-        return execCmd(doubleConverter, INCRBYFLOAT, key, toBytes(delta));
+        return execCmd(doubleConverter,
+                encode(channel.alloc(), INCRBYFLOAT.raw, key, toBytes(delta)));
     }
 
     @Override
     public Future<byte[]> info() {
-        return execCmd(bytesConverter, INFO);
+        return execCmd(bytesConverter, encode(channel.alloc(), INFO.raw));
     }
 
     @Override
     public Future<byte[]> info(byte[] section) {
-        return execCmd(bytesConverter, INFO, section);
+        return execCmd(bytesConverter, encode(channel.alloc(), INFO.raw, section));
     }
 
     @Override
@@ -523,88 +538,98 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<List<byte[]>> keys(byte[] pattern) {
-        return execCmd(listConverter, KEYS, pattern);
+        return execCmd(listConverter, encode(channel.alloc(), KEYS.raw, pattern));
     }
 
     @Override
     public Future<Long> lastsave() {
-        return execCmd(longConverter, LASTSAVE);
+        return execCmd(longConverter, encode(channel.alloc(), LASTSAVE.raw));
     }
 
     @Override
     public Future<byte[]> lindex(byte[] key, long index) {
-        return execCmd(bytesConverter, LINDEX, key, toBytes(index));
+        return execCmd(bytesConverter, encode(channel.alloc(), LINDEX.raw, key, toBytes(index)));
     }
 
     @Override
     public Future<Long> linsert(byte[] key, LIST_POSITION where, byte[] pivot, byte[] value) {
-        return execCmd(longConverter, LINSERT, key, where.raw, pivot, value);
+        return execCmd(longConverter,
+                encode(channel.alloc(), LINSERT.raw, key, where.raw, pivot, value));
     }
 
     @Override
     public Future<Long> llen(byte[] key) {
-        return execCmd(longConverter, LLEN, key);
+        return execCmd(longConverter, encode(channel.alloc(), LLEN.raw, key));
     }
 
     @Override
     public Future<byte[]> lpop(byte[] key) {
-        return execCmd(bytesConverter, LPOP, key);
+        return execCmd(bytesConverter, encode(channel.alloc(), LPOP.raw, key));
     }
 
     @Override
     public Future<Long> lpush(byte[] key, byte[]... values) {
-        return execCmd(longConverter, LPUSH, toParamsReverse(values, key));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), LPUSH.raw, values, key));
     }
 
     @Override
     public Future<Long> lpushx(byte[] key, byte[] value) {
-        return execCmd(longConverter, LPUSHX, key, value);
+        return execCmd(longConverter, encode(channel.alloc(), LPUSHX.raw, key, value));
     }
 
     @Override
     public Future<List<byte[]>> lrange(byte[] key, long startInclusive, long stopInclusive) {
-        return execCmd(listConverter, LRANGE, key, toBytes(startInclusive), toBytes(stopInclusive));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), LRANGE.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive)));
     }
 
     @Override
     public Future<Long> lrem(byte[] key, long count, byte[] value) {
-        return execCmd(longConverter, LREM, key, toBytes(count), value);
+        return execCmd(longConverter, encode(channel.alloc(), LREM.raw, key, toBytes(count), value));
     }
 
     @Override
     public Future<byte[]> lset(byte[] key, long index, byte[] value) {
-        return execCmd(bytesConverter, LSET, key, toBytes(index), value);
+        return execCmd(bytesConverter,
+                encode(channel.alloc(), LSET.raw, key, toBytes(index), value));
     }
 
     @Override
     public Future<Void> ltrim(byte[] key, long startInclusive, long stopInclusive) {
-        return execCmd(voidConverter, LTRIM, key, toBytes(startInclusive), toBytes(stopInclusive));
+        return execCmd(
+                voidConverter,
+                encode(channel.alloc(), LTRIM.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive)));
     }
 
     @Override
     public Future<List<byte[]>> mget(byte[]... keys) {
-        return execCmd(listConverter, MGET, keys);
+        return execCmd(listConverter, encode(channel.alloc(), MGET.raw, keys));
     }
 
     @Override
     public Future<Void> migrate(byte[] host, int port, byte[] key, int dstDb, long timeoutMs) {
-        return execCmd(voidConverter, MIGRATE, host, toBytes(port), key, toBytes(dstDb),
-                toBytes(timeoutMs));
+        return execCmd(
+                voidConverter,
+                encode(channel.alloc(), MIGRATE.raw, host, toBytes(port), key, toBytes(dstDb),
+                        toBytes(timeoutMs)));
     }
 
     @Override
     public Future<Boolean> move(byte[] key, int db) {
-        return execCmd(booleanConverter, MOVE, key, toBytes(db));
+        return execCmd(booleanConverter, encode(channel.alloc(), MOVE.raw, key, toBytes(db)));
     }
 
     @Override
     public Future<Void> mset(byte[]... keysvalues) {
-        return execCmd(voidConverter, MSET, keysvalues);
+        return execCmd(voidConverter, encode(channel.alloc(), MSET.raw, keysvalues));
     }
 
     @Override
     public Future<Boolean> msetnx(byte[]... keysvalues) {
-        return execCmd(booleanConverter, MSETNX, keysvalues);
+        return execCmd(booleanConverter, encode(channel.alloc(), MSETNX.raw, keysvalues));
     }
 
     @Override
@@ -614,42 +639,43 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Boolean> persist(byte[] key) {
-        return execCmd(booleanConverter, PERSIST, key);
+        return execCmd(booleanConverter, encode(channel.alloc(), PERSIST.raw, key));
     }
 
     @Override
     public Future<Boolean> pexpire(byte[] key, long millis) {
-        return execCmd(booleanConverter, PEXPIRE, toBytes(millis));
+        return execCmd(booleanConverter, encode(channel.alloc(), PEXPIRE.raw, toBytes(millis)));
     }
 
     @Override
     public Future<Boolean> pexpireat(byte[] key, long unixTimeMs) {
-        return execCmd(booleanConverter, PEXPIREAT, toBytes(unixTimeMs));
+        return execCmd(booleanConverter,
+                encode(channel.alloc(), PEXPIREAT.raw, toBytes(unixTimeMs)));
     }
 
     @Override
     public Future<Boolean> pfadd(byte[] key, byte[]... elements) {
-        return execCmd(booleanConverter, PFADD, toParamsReverse(elements, key));
+        return execCmd(booleanConverter, encodeReverse(channel.alloc(), PFADD.raw, elements, key));
     }
 
     @Override
     public Future<Long> pfcount(byte[]... keys) {
-        return execCmd(longConverter, PFCOUNT, keys);
+        return execCmd(longConverter, encode(channel.alloc(), PFCOUNT.raw, keys));
     }
 
     @Override
     public Future<Void> pfmerge(byte[] dst, byte[]... keys) {
-        return execCmd(voidConverter, PFMERGE, toParamsReverse(keys, dst));
+        return execCmd(voidConverter, encodeReverse(channel.alloc(), PFMERGE.raw, keys, dst));
     }
 
     @Override
     public Future<String> ping() {
-        return execCmd(stringConverter, PING);
+        return execCmd(stringConverter, encode(channel.alloc(), PING.raw));
     }
 
     @Override
     public Future<Long> pttl(byte[] key) {
-        return execCmd(longConverter, PTTL, key);
+        return execCmd(longConverter, encode(channel.alloc(), PTTL.raw, key));
     }
 
     @Override
@@ -663,12 +689,12 @@ public class NedisClientImpl implements NedisClient {
     }
 
     Future<Void> quit0() {
-        return execCmd(voidConverter, QUIT);
+        return execCmd(voidConverter, encode(channel.alloc(), QUIT.raw));
     }
 
     @Override
     public Future<byte[]> randomkey() {
-        return execCmd(bytesConverter, RANDOMKEY);
+        return execCmd(bytesConverter, encode(channel.alloc(), RANDOMKEY.raw));
     }
 
     @Override
@@ -680,57 +706,60 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Void> rename(byte[] key, byte[] newKey) {
-        return execCmd(voidConverter, RENAME, key, newKey);
+        return execCmd(voidConverter, encode(channel.alloc(), RENAME.raw, key, newKey));
     }
 
     @Override
     public Future<Boolean> renamenx(byte[] key, byte[] newKey) {
-        return execCmd(booleanConverter, RENAMENX, key, newKey);
+        return execCmd(booleanConverter, encode(channel.alloc(), RENAMENX.raw, key, newKey));
     }
 
     @Override
     public Future<Void> restore(byte[] key, int ttlMs, byte[] serializedValue, boolean replace) {
         if (replace) {
-            return execCmd(voidConverter, RESTORE, key, toBytes(ttlMs), serializedValue,
-                    REPLACE.raw);
+            return execCmd(
+                    voidConverter,
+                    encode(channel.alloc(), RESTORE.raw, key, toBytes(ttlMs), serializedValue,
+                            REPLACE.raw));
         } else {
-            return execCmd(voidConverter, RESTORE, key, toBytes(ttlMs), serializedValue);
+            return execCmd(voidConverter,
+                    encode(channel.alloc(), RESTORE.raw, key, toBytes(ttlMs), serializedValue));
         }
     }
 
     @Override
     public Future<List<byte[]>> role() {
-        return execCmd(listConverter, ROLE);
+        return execCmd(listConverter, encode(channel.alloc(), ROLE.raw));
     }
 
     @Override
     public Future<byte[]> rpop(byte[] key) {
-        return execCmd(bytesConverter, RPOP, key);
+        return execCmd(bytesConverter, encode(channel.alloc(), RPOP.raw, key));
     }
 
     @Override
     public Future<byte[]> rpoplpush(byte[] src, byte[] dst) {
-        return execCmd(bytesConverter, RPOPLPUSH, src, dst);
+        return execCmd(bytesConverter, encode(channel.alloc(), RPOPLPUSH.raw, src, dst));
     }
 
     @Override
     public Future<Long> rpush(byte[] key, byte[]... values) {
-        return execCmd(longConverter, RPUSH, toParamsReverse(values, key));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), RPUSH.raw, values, key));
     }
 
     @Override
     public Future<Long> rpushx(byte[] key, byte[] value) {
-        return execCmd(longConverter, RPUSHX, key, value);
+        return execCmd(longConverter, encode(channel.alloc(), RPUSHX.raw, key, value));
     }
 
     @Override
     public Future<Long> sadd(byte[] key, byte[]... members) {
-        return execCmd(longConverter, SADD, toParamsReverse(members, key));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), SADD.raw, members, key));
     }
 
     @Override
     public Future<Void> save(boolean save) {
-        return execCmd(voidConverter, SAVE);
+        return execCmd(voidConverter, encode(channel.alloc(), SAVE.raw));
     }
 
     @Override
@@ -740,38 +769,38 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Long> scard(byte[] key) {
-        return execCmd(longConverter, SCARD, key);
+        return execCmd(longConverter, encode(channel.alloc(), SCARD.raw, key));
     }
 
     @Override
     public Future<List<Boolean>> scriptExists(byte[]... scripts) {
-        return execCmd(booleanListConverter, SCRIPT,
-                toParamsReverse(scripts, RedisKeyword.EXISTS.raw));
+        return execCmd(booleanListConverter,
+                encodeReverse(channel.alloc(), SCRIPT.raw, scripts, RedisKeyword.EXISTS.raw));
     }
 
     @Override
     public Future<Void> scriptFlush() {
-        return execCmd(voidConverter, SCRIPT, FLUSH.raw);
+        return execCmd(voidConverter, encode(channel.alloc(), SCRIPT.raw, FLUSH.raw));
     }
 
     @Override
     public Future<Void> scriptKill() {
-        return execCmd(voidConverter, SCRIPT, KILL.raw);
+        return execCmd(voidConverter, encode(channel.alloc(), SCRIPT.raw, KILL.raw));
     }
 
     @Override
     public Future<byte[]> scriptLoad(byte[] script) {
-        return execCmd(bytesConverter, SCRIPT, LOAD.raw, script);
+        return execCmd(bytesConverter, encode(channel.alloc(), SCRIPT.raw, LOAD.raw, script));
     }
 
     @Override
     public Future<Set<byte[]>> sdiff(byte[]... keys) {
-        return execCmd(setConverter, SDIFF, keys);
+        return execCmd(setConverter, encode(channel.alloc(), SDIFF.raw, keys));
     }
 
     @Override
     public Future<Long> sdiffstore(byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, SDIFFSTORE, toParamsReverse(keys, dst));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), SDIFFSTORE.raw, keys, dst));
     }
 
     @Override
@@ -785,12 +814,12 @@ public class NedisClientImpl implements NedisClient {
     }
 
     Future<Void> select0(int index) {
-        return execCmd(voidConverter, SELECT, toBytes(index));
+        return execCmd(voidConverter, encode(channel.alloc(), SELECT.raw, toBytes(index)));
     }
 
     @Override
     public Future<Boolean> set(byte[] key, byte[] value) {
-        return execCmd(booleanConverter, SET, key, value);
+        return execCmd(booleanConverter, encode(channel.alloc(), SET.raw, key, value));
     }
 
     @Override
@@ -810,17 +839,19 @@ public class NedisClientImpl implements NedisClient {
         } else if (params.xx()) {
             p.add(XX.raw);
         }
-        return execCmd(booleanConverter, SET, p.toArray(new byte[0][]));
+        return execCmd(booleanConverter, encode(channel.alloc(), SET.raw, p));
     }
 
     @Override
     public Future<Boolean> setbit(byte[] key, long offset, boolean bit) {
-        return execCmd(booleanConverter, SETBIT, key, toBytes(offset), toBytes(bit));
+        return execCmd(booleanConverter,
+                encode(channel.alloc(), SETBIT.raw, key, toBytes(offset), toBytes(bit)));
     }
 
     @Override
     public Future<Long> setrange(byte[] key, long offset, byte[] value) {
-        return execCmd(longConverter, SETRANGE, key, toBytes(offset), value);
+        return execCmd(longConverter,
+                encode(channel.alloc(), SETRANGE.raw, key, toBytes(offset), value));
     }
 
     @Override
@@ -843,72 +874,73 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Set<byte[]>> sinter(byte[]... keys) {
-        return execCmd(setConverter, SINTER, keys);
+        return execCmd(setConverter, encode(channel.alloc(), SINTER.raw, keys));
     }
 
     @Override
     public Future<Long> sinterstore(byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, SINTERSTORE, toParamsReverse(keys, dst));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), SINTERSTORE.raw, keys, dst));
     }
 
     @Override
     public Future<Boolean> sismember(byte[] key, byte[] member) {
-        return execCmd(booleanConverter, SISMEMBER, key, member);
+        return execCmd(booleanConverter, encode(channel.alloc(), SISMEMBER.raw, key, member));
     }
 
     @Override
     public Future<Void> slaveof(String host, int port) {
-        return execCmd(voidConverter, SLAVEOF, toBytes(host), toBytes(port));
+        return execCmd(voidConverter,
+                encode(channel.alloc(), SLAVEOF.raw, toBytes(host), toBytes(port)));
     }
 
     @Override
     public Future<Set<byte[]>> smembers(byte[] key) {
-        return execCmd(setConverter, SMEMBERS, key);
+        return execCmd(setConverter, encode(channel.alloc(), SMEMBERS.raw, key));
     }
 
     @Override
     public Future<Boolean> smove(byte[] src, byte[] dst, byte[] member) {
-        return execCmd(booleanConverter, SMOVE, src, dst, member);
+        return execCmd(booleanConverter, encode(channel.alloc(), SMOVE.raw, src, dst, member));
     }
 
     @Override
     public Future<List<byte[]>> sort(byte[] key) {
-        return execCmd(listConverter, SORT, key);
+        return execCmd(listConverter, encode(channel.alloc(), SORT.raw, key));
     }
 
     @Override
     public Future<Long> sort(byte[] key, byte[] dst) {
-        return execCmd(longConverter, SORT, key, STORE.raw, dst);
+        return execCmd(longConverter, encode(channel.alloc(), SORT.raw, key, STORE.raw, dst));
     }
 
     @Override
     public Future<List<byte[]>> sort(byte[] key, SortParams params) {
-        return execCmd(listConverter, SORT, toSortParams(key, params, null));
+        return execCmd(listConverter, encodeSortParams(SORT, key, params, null));
     }
 
     @Override
     public Future<Long> sort(byte[] key, SortParams params, byte[] dst) {
-        return execCmd(longConverter, SORT, toSortParams(key, params, dst));
+        return execCmd(longConverter, encodeSortParams(SORT, key, params, dst));
     }
 
     @Override
     public Future<byte[]> spop(byte[] key) {
-        return execCmd(bytesConverter, SPOP, key);
+        return execCmd(bytesConverter, encode(channel.alloc(), SPOP.raw, key));
     }
 
     @Override
     public Future<byte[]> srandmember(byte[] key) {
-        return execCmd(bytesConverter, SRANDMEMBER, key);
+        return execCmd(bytesConverter, encode(channel.alloc(), SRANDMEMBER.raw, key));
     }
 
     @Override
     public Future<Set<byte[]>> srandmember(byte[] key, long count) {
-        return execCmd(setConverter, SRANDMEMBER, key, toBytes(count));
+        return execCmd(setConverter, encode(channel.alloc(), SRANDMEMBER.raw, key, toBytes(count)));
     }
 
     @Override
     public Future<Long> srem(byte[] key, byte[]... members) {
-        return execCmd(longConverter, SREM, toParamsReverse(members, key));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), SREM.raw, members, key));
     }
 
     @Override
@@ -918,30 +950,30 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Long> strlen(byte[] key) {
-        return execCmd(longConverter, STRLEN, key);
+        return execCmd(longConverter, encode(channel.alloc(), STRLEN.raw, key));
     }
 
     @Override
     public Future<Set<byte[]>> sunion(byte[]... keys) {
-        return execCmd(setConverter, SUNION, keys);
+        return execCmd(setConverter, encode(channel.alloc(), SUNION.raw, keys));
     }
 
     @Override
     public Future<Long> sunionstore(byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, SUNIONSTORE, toParamsReverse(keys, dst));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), SUNIONSTORE.raw, keys, dst));
     }
 
     @Override
     public Future<Void> sync() {
-        return execCmd(voidConverter, SYNC);
+        return execCmd(voidConverter, encode(channel.alloc(), SYNC.raw));
     }
 
     @Override
     public Future<List<byte[]>> time() {
-        return execCmd(listConverter, TIME);
+        return execCmd(listConverter, encode(channel.alloc(), TIME.raw));
     }
 
-    private byte[][] toSortParams(byte[] key, SortParams sort, byte[] dst) {
+    private ByteBuf encodeSortParams(RedisCommand cmd, byte[] key, SortParams sort, byte[] dst) {
         List<byte[]> params = new ArrayList<>();
         params.add(key);
         if (sort.by() != null) {
@@ -965,10 +997,10 @@ public class NedisClientImpl implements NedisClient {
             params.add(STORE.raw);
             params.add(dst);
         }
-        return params.toArray(new byte[0][]);
+        return encode(channel.alloc(), cmd.raw, params);
     }
 
-    private byte[][] toZSetOpParams(byte[] dst, ZSetOpParams params) {
+    private ByteBuf encodeZSetOpParams(RedisCommand cmd, byte[] dst, ZSetOpParams params) {
         byte[][] p = new byte[2 + params.keys().size() + params.weights().size()
                 + (params.aggregate() != null ? 1 : 0)][];
         p[0] = dst;
@@ -983,32 +1015,33 @@ public class NedisClientImpl implements NedisClient {
         if (params.aggregate() != null) {
             p[i] = params.aggregate().raw;
         }
-        return p;
+        return encode(channel.alloc(), cmd.raw, p);
     }
 
     @Override
     public Future<Long> ttl(byte[] key) {
-        return execCmd(longConverter, TTL, key);
+        return execCmd(longConverter, encode(channel.alloc(), TTL.raw, key));
     }
 
     @Override
     public Future<String> type(byte[] key) {
-        return execCmd(stringConverter, TYPE, key);
+        return execCmd(stringConverter, encode(channel.alloc(), TYPE.raw, key));
     }
 
     @Override
     public Future<Void> unwatch() {
-        return execCmd(voidConverter, UNWATCH);
+        return execCmd(voidConverter, encode(channel.alloc(), UNWATCH.raw));
     }
 
     @Override
     public Future<Void> watch(byte[]... keys) {
-        return execCmd(voidConverter, WATCH, keys);
+        return execCmd(voidConverter, encode(channel.alloc(), WATCH.raw, keys));
     }
 
     @Override
     public Future<Long> zadd(byte[] key, double score, byte[] member) {
-        return execCmd(longConverter, ZADD, key, toBytes(score), member);
+        return execCmd(longConverter,
+                encode(channel.alloc(), ZADD.raw, key, toBytes(score), member));
     }
 
     @Override
@@ -1020,166 +1053,193 @@ public class NedisClientImpl implements NedisClient {
             params[i++] = toBytes(e.getValue().doubleValue());
             params[i++] = e.getKey();
         }
-        return execCmd(longConverter, ZADD, params);
+        return execCmd(longConverter, encode(channel.alloc(), ZADD.raw, params));
     }
 
     @Override
     public Future<Long> zcard(byte[] key) {
-        return execCmd(longConverter, ZCARD, key);
+        return execCmd(longConverter, encode(channel.alloc(), ZCARD.raw, key));
     }
 
     @Override
     public Future<Long> zcount(byte[] key, byte[] min, byte[] max) {
-        return execCmd(longConverter, ZCOUNT, key, min, max);
+        return execCmd(longConverter, encode(channel.alloc(), ZCOUNT.raw, key, min, max));
     }
 
     @Override
     public Future<Double> zincrby(byte[] key, double delta, byte[] member) {
-        return execCmd(doubleConverter, ZINCRBY, key, toBytes(delta), member);
+        return execCmd(doubleConverter,
+                encode(channel.alloc(), ZINCRBY.raw, key, toBytes(delta), member));
     }
 
     @Override
     public Future<Long> zinterstore(byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, ZINTERSTORE, toParamsReverse(keys, dst));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), ZINTERSTORE.raw, keys, dst));
     }
 
     @Override
     public Future<Long> zinterstore(byte[] dst, ZSetOpParams params) {
-        return execCmd(longConverter, ZINTERSTORE, toZSetOpParams(dst, params));
+        return execCmd(longConverter, encodeZSetOpParams(ZINTERSTORE, dst, params));
     }
 
     @Override
     public Future<Long> zlexcount(byte[] key, byte[] min, byte[] max) {
-        return execCmd(longConverter, ZLEXCOUNT, key, min, max);
+        return execCmd(longConverter, encode(channel.alloc(), ZLEXCOUNT.raw, key, min, max));
     }
 
     @Override
     public Future<List<byte[]>> zrange(byte[] key, long startInclusive, long stopInclusive) {
-        return execCmd(listConverter, ZRANGE, key, toBytes(startInclusive), toBytes(stopInclusive));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), ZRANGE.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive)));
     }
 
     @Override
     public Future<List<byte[]>> zrangebylex(byte[] key, byte[] min, byte[] max) {
-        return execCmd(listConverter, ZRANGEBYLEX, key, min, max);
+        return execCmd(listConverter, encode(channel.alloc(), ZRANGEBYLEX.raw, key, min, max));
     }
 
     @Override
     public Future<List<byte[]>> zrangebylex(byte[] key, byte[] min, byte[] max, long offset,
             long count) {
-        return execCmd(listConverter, ZRANGEBYLEX, key, min, max, LIMIT.raw, toBytes(offset),
-                toBytes(count));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), ZRANGEBYLEX.raw, key, min, max, LIMIT.raw, toBytes(offset),
+                        toBytes(count)));
     }
 
     @Override
     public Future<List<byte[]>> zrangebyscore(byte[] key, byte[] min, byte[] max) {
-        return execCmd(listConverter, ZRANGEBYSCORE, key, min, max);
+        return execCmd(listConverter, encode(channel.alloc(), ZRANGEBYSCORE.raw, key, min, max));
     }
 
     @Override
     public Future<List<byte[]>> zrangebyscore(byte[] key, byte[] min, byte[] max, long offset,
             long count) {
-        return execCmd(listConverter, ZRANGEBYSCORE, key, min, max, LIMIT.raw, toBytes(offset),
-                toBytes(count));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), ZRANGEBYSCORE.raw, key, min, max, LIMIT.raw,
+                        toBytes(offset), toBytes(count)));
     }
 
     @Override
     public Future<List<SortedSetEntry>> zrangebyscoreWithScores(byte[] key, byte[] min, byte[] max) {
-        return execCmd(sortedSetEntryListConverter, ZRANGEBYSCORE, key, min, max, WITHSCORES.raw);
+        return execCmd(sortedSetEntryListConverter,
+                encode(channel.alloc(), ZRANGEBYSCORE.raw, key, min, max, WITHSCORES.raw));
     }
 
     @Override
     public Future<List<SortedSetEntry>> zrangebyscoreWithScores(byte[] key, byte[] min, byte[] max,
             long offset, long count) {
-        return execCmd(sortedSetEntryListConverter, ZRANGEBYSCORE, key, min, max, WITHSCORES.raw,
-                LIMIT.raw, toBytes(offset), toBytes(count));
+        return execCmd(
+                sortedSetEntryListConverter,
+                encode(channel.alloc(), ZRANGEBYSCORE.raw, key, min, max, WITHSCORES.raw,
+                        LIMIT.raw, toBytes(offset), toBytes(count)));
     }
 
     @Override
     public Future<List<SortedSetEntry>> zrangeWithScores(byte[] key, long startInclusive,
             long stopInclusive) {
-        return execCmd(sortedSetEntryListConverter, ZRANGE, key, toBytes(startInclusive),
-                toBytes(stopInclusive), WITHSCORES.raw);
+        return execCmd(
+                sortedSetEntryListConverter,
+                encode(channel.alloc(), ZRANGE.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive), WITHSCORES.raw));
     }
 
     @Override
     public Future<Long> zrank(byte[] key, byte[] member) {
-        return execCmd(longConverter, ZRANK, key, member);
+        return execCmd(longConverter, encode(channel.alloc(), ZRANK.raw, key, member));
     }
 
     @Override
     public Future<Long> zrem(byte[] key, byte[]... members) {
-        return execCmd(longConverter, ZREM, toParamsReverse(members, key));
+        return execCmd(longConverter,
+                encode(channel.alloc(), ZREM.raw, toParamsReverse(members, key)));
     }
 
     @Override
     public Future<Long> zremrangebylex(byte[] key, byte[] min, byte[] max) {
-        return execCmd(longConverter, ZREMRANGEBYLEX, key, min, max);
+        return execCmd(longConverter, encode(channel.alloc(), ZREMRANGEBYLEX.raw, key, min, max));
     }
 
     @Override
     public Future<Long> zremrangebyrank(byte[] key, long startInclusive, long stopInclusive) {
-        return execCmd(longConverter, ZREMRANGEBYRANK, key, toBytes(startInclusive),
-                toBytes(stopInclusive));
+        return execCmd(
+                longConverter,
+                encode(channel.alloc(), ZREMRANGEBYRANK.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive)));
     }
 
     @Override
     public Future<Long> zremrangebyscore(byte[] key, byte[] min, byte[] max) {
-        return execCmd(longConverter, ZREMRANGEBYSCORE, key, min, max);
+        return execCmd(longConverter, encode(channel.alloc(), ZREMRANGEBYSCORE.raw, key, min, max));
     }
 
     @Override
     public Future<List<byte[]>> zrevrange(byte[] key, long startInclusive, long stopInclusive) {
-        return execCmd(listConverter, ZREVRANGE, key, toBytes(startInclusive),
-                toBytes(stopInclusive));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), ZREVRANGE.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive)));
     }
 
     @Override
     public Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] max, byte[] min) {
-        return execCmd(listConverter, ZREVRANGEBYLEX, key, max, min);
+        return execCmd(listConverter, encode(channel.alloc(), ZREVRANGEBYLEX.raw, key, max, min));
     }
 
     @Override
     public Future<List<byte[]>> zrevrangebylex(byte[] key, byte[] max, byte[] min, long offset,
             long count) {
-        return execCmd(listConverter, ZREVRANGEBYLEX, key, max, min, LIMIT.raw, toBytes(offset),
-                toBytes(count));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), ZREVRANGEBYLEX.raw, key, max, min, LIMIT.raw,
+                        toBytes(offset), toBytes(count)));
     }
 
     @Override
     public Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] max, byte[] min) {
-        return execCmd(listConverter, ZREVRANGEBYSCORE, key, max, min);
+        return execCmd(listConverter, encode(channel.alloc(), ZREVRANGEBYSCORE.raw, key, max, min));
     }
 
     @Override
     public Future<List<byte[]>> zrevrangebyscore(byte[] key, byte[] max, byte[] min, long offset,
             long count) {
-        return execCmd(listConverter, ZREVRANGEBYSCORE, key, max, min, LIMIT.raw, toBytes(offset),
-                toBytes(count));
+        return execCmd(
+                listConverter,
+                encode(channel.alloc(), ZREVRANGEBYSCORE.raw, key, max, min, LIMIT.raw,
+                        toBytes(offset), toBytes(count)));
     }
 
     @Override
     public Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] max,
             byte[] min) {
-        return execCmd(sortedSetEntryListConverter, ZREVRANGEBYSCORE, key, max, min, WITHSCORES.raw);
+        return execCmd(sortedSetEntryListConverter,
+                encode(channel.alloc(), ZREVRANGEBYSCORE.raw, key, max, min, WITHSCORES.raw));
     }
 
     @Override
     public Future<List<SortedSetEntry>> zrevrangebyscoreWithScores(byte[] key, byte[] max,
             byte[] min, long offset, long count) {
-        return execCmd(sortedSetEntryListConverter, ZREVRANGEBYSCORE, key, max, min,
-                WITHSCORES.raw, LIMIT.raw, toBytes(offset), toBytes(count), WITHSCORES.raw);
+        return execCmd(
+                sortedSetEntryListConverter,
+                encode(channel.alloc(), ZREVRANGEBYSCORE.raw, key, max, min, WITHSCORES.raw,
+                        LIMIT.raw, toBytes(offset), toBytes(count), WITHSCORES.raw));
     }
 
     @Override
     public Future<List<SortedSetEntry>> zrevrangeWithScores(byte[] key, long startInclusive,
             long stopInclusive) {
-        return execCmd(sortedSetEntryListConverter, ZREVRANGE, key, toBytes(startInclusive),
-                toBytes(stopInclusive), WITHSCORES.raw);
+        return execCmd(
+                sortedSetEntryListConverter,
+                encode(channel.alloc(), ZREVRANGE.raw, key, toBytes(startInclusive),
+                        toBytes(stopInclusive), WITHSCORES.raw));
     }
 
     @Override
     public Future<Long> zrevrank(byte[] key, byte[] member) {
-        return execCmd(longConverter, ZREVRANK, key, member);
+        return execCmd(longConverter, encode(channel.alloc(), ZREVRANK.raw, key, member));
     }
 
     @Override
@@ -1189,16 +1249,16 @@ public class NedisClientImpl implements NedisClient {
 
     @Override
     public Future<Double> zscore(byte[] key, byte[] member) {
-        return execCmd(doubleConverter, ZSCORE, key, member);
+        return execCmd(doubleConverter, encode(channel.alloc(), ZSCORE.raw, key, member));
     }
 
     @Override
     public Future<Long> zunionstore(byte[] dst, ZSetOpParams params) {
-        return execCmd(longConverter, ZUNIONSTORE, toZSetOpParams(dst, params));
+        return execCmd(longConverter, encodeZSetOpParams(ZUNIONSTORE, dst, params));
     }
 
     @Override
     public Future<Long> zunionstore(byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, ZUNIONSTORE, toParamsReverse(keys, dst));
+        return execCmd(longConverter, encodeReverse(channel.alloc(), ZUNIONSTORE.raw, keys, dst));
     }
 }

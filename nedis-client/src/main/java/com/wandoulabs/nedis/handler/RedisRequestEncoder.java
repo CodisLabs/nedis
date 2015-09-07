@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * @(#)RequestEncoder.java, 2015-8-27. 
- *
- * Copyright (c) 2015, Wandou Labs and/or its affiliates. All rights reserved.
- * WANDOU LABS PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package com.wandoulabs.nedis.handler;
 
-import java.nio.charset.StandardCharsets;
+import static com.wandoulabs.nedis.util.NedisUtils.toBytes;
+
+import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.buffer.ByteBufAllocator;
 
 /**
- * @author zhangduo
+ * @author Apache9
  */
-public class RedisRequestEncoder extends MessageToByteEncoder<byte[][]> {
+public class RedisRequestEncoder {
 
     private static final byte[] CRLF = new byte[] {
         '\r', '\n'
@@ -49,32 +44,93 @@ public class RedisRequestEncoder extends MessageToByteEncoder<byte[][]> {
         }
     }
 
-    private byte[] toBytes(int value) {
-        return Integer.toString(value).getBytes(StandardCharsets.US_ASCII);
+    private static int paramCountSize(int paramCount) {
+        // * + paramCount + CRLF
+        return 1 + stringSize(paramCount) + 2;
     }
 
-    @Override
-    protected void encode(ChannelHandlerContext ctx, byte[][] msg, ByteBuf out) throws Exception {
-        out.writeByte('*').writeBytes(toBytes(msg.length)).writeBytes(CRLF);
-        for (byte[] param: msg) {
-            out.writeByte('$').writeBytes(toBytes(param.length)).writeBytes(CRLF).writeBytes(param)
-                    .writeBytes(CRLF);
+    private static int paramSize(byte[] param) {
+        // $ + paramLength + CRLF + param + CRLF
+        return 1 + stringSize(param.length) + 2 + param.length + 2;
+    }
+
+    private static int serializedSize(byte[] cmd, byte[][] params, byte[]... otherParams) {
+        int size = paramCountSize(1 + params.length + otherParams.length) + paramSize(cmd);
+        for (byte[] param: params) {
+            size += paramSize(param);
         }
-    }
-
-    private int serializedSize(byte[][] msg) {
-        int size = 1 + stringSize(msg.length) + 2;
-        for (byte[] param: msg) {
-            size += 1 + stringSize(param.length) + 2 + param.length + 2;
+        for (byte[] param: otherParams) {
+            size += paramSize(param);
         }
         return size;
     }
 
-    @Override
-    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, byte[][] msg, boolean preferDirect)
-            throws Exception {
-        int size = serializedSize(msg);
-        return preferDirect ? ctx.alloc().ioBuffer(size) : ctx.alloc().heapBuffer(size);
+    private static int serializedSize(byte[] cmd, List<byte[]> params) {
+        int size = paramCountSize(1 + params.size()) + paramSize(cmd);
+        for (byte[] param: params) {
+            size += paramSize(param);
+        }
+        return size;
     }
 
+    private static void writeParamCount(ByteBuf buf, int paramCount) {
+        buf.writeByte('*').writeBytes(toBytes(paramCount)).writeBytes(CRLF);
+    }
+
+    private static void writeParam(ByteBuf buf, byte[] param) {
+        buf.writeByte('$').writeBytes(toBytes(param.length)).writeBytes(CRLF).writeBytes(param)
+                .writeBytes(CRLF);
+    }
+
+    public static ByteBuf encode(ByteBufAllocator alloc, byte[] cmd, byte[]... params) {
+        int serializedSize = serializedSize(cmd, params);
+        ByteBuf buf = alloc.buffer(serializedSize, serializedSize);
+        writeParamCount(buf, params.length + 1);
+        writeParam(buf, cmd);
+        for (byte[] param: params) {
+            writeParam(buf, param);
+        }
+        return buf;
+    }
+
+    public static ByteBuf encode(ByteBufAllocator alloc, byte[] cmd, byte[][] headParams,
+            byte[]... tailParams) {
+        int serializedSize = serializedSize(cmd, headParams, tailParams);
+        ByteBuf buf = alloc.buffer(serializedSize, serializedSize);
+        writeParamCount(buf, headParams.length + tailParams.length + 1);
+        writeParam(buf, cmd);
+        for (byte[] param: headParams) {
+            writeParam(buf, param);
+        }
+        for (byte[] param: tailParams) {
+            writeParam(buf, param);
+        }
+        return buf;
+    }
+
+    public static ByteBuf encodeReverse(ByteBufAllocator alloc, byte[] cmd, byte[][] tailParams,
+            byte[]... headParams) {
+        int serializedSize = serializedSize(cmd, tailParams, headParams);
+        ByteBuf buf = alloc.buffer(serializedSize, serializedSize);
+        writeParamCount(buf, headParams.length + tailParams.length + 1);
+        writeParam(buf, cmd);
+        for (byte[] param: headParams) {
+            writeParam(buf, param);
+        }
+        for (byte[] param: tailParams) {
+            writeParam(buf, param);
+        }
+        return buf;
+    }
+
+    public static ByteBuf encode(ByteBufAllocator alloc, byte[] cmd, List<byte[]> params) {
+        int serializedSize = serializedSize(cmd, params);
+        ByteBuf buf = alloc.buffer(serializedSize, serializedSize);
+        writeParamCount(buf, params.size() + 1);
+        writeParam(buf, cmd);
+        for (byte[] param: params) {
+            writeParam(buf, param);
+        }
+        return buf;
+    }
 }

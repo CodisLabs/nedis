@@ -23,6 +23,7 @@ import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 
 import java.net.SocketAddress;
+import java.util.ArrayList;
 
 import com.wandoulabs.nedis.util.NedisClientHashSet;
 
@@ -157,13 +158,7 @@ public class NedisClientPoolImpl implements NedisClientPool {
         return promise;
     }
 
-    private final class AcquireFutureListener implements FutureListener<NedisClient> {
-
-        private final boolean exclusive;
-
-        public AcquireFutureListener(boolean exclusive) {
-            this.exclusive = exclusive;
-        }
+    private final FutureListener<NedisClient> acquireFutureListener = new FutureListener<NedisClient>() {
 
         @Override
         public void operationComplete(Future<NedisClient> future) throws Exception {
@@ -185,14 +180,35 @@ public class NedisClientPoolImpl implements NedisClientPool {
 
                     });
                     if (!exclusive) {
-                        tryPooling(future.getNow());
+                        if (closed) {
+                            client.close();
+                        } else {
+                            pool.add(client);
+                            if (!pendingAcquireList.isEmpty()) {
+                                for (Promise<NedisClient> promise: pendingAcquireList) {
+                                    promise.trySuccess(client);
+                                }
+                                pendingAcquireList.clear();
+                                // usually we do not need this any more, so trim its size.
+                                pendingAcquireList.trimToSize();
+                            }
+                        }
                     }
                 } else {
                     numConns--;
+                    if (!exclusive && numConns == 0) {
+                        // notify all pending promises that we could not get a connection.
+                        for (Promise<NedisClient> promise: pendingAcquireList) {
+                            promise.tryFailure(future.cause());
+                        }
+                        pendingAcquireList.clear();
+                    }
                 }
             }
         }
-    }
+    };
+
+    private final ArrayList<Promise<NedisClient>> pendingAcquireList = new ArrayList<>();
 
     @Override
     public Future<NedisClient> acquire() {
@@ -203,14 +219,23 @@ public class NedisClientPoolImpl implements NedisClientPool {
             }
             if (numConns < maxPooledConns) {
                 numConns++;
-                return newClient().addListener(new AcquireFutureListener(exclusive));
+                return newClient().addListener(acquireFutureListener);
             }
             if (!pool.isEmpty()) {
                 NedisClient client = pool.head(exclusive);
                 return client.eventLoop().newSucceededFuture(client);
             }
-            numConns++;
-            return newClient().addListener(new AcquireFutureListener(exclusive));
+            if (exclusive) {
+                numConns++;
+                return newClient().addListener(acquireFutureListener);
+            } else {
+                // If connection is shared, then we should not create more connections than
+                // maxPooledConns. So here we add a promise to pending queue. The promise will be
+                // notified when there are connections in pool.
+                Promise<NedisClient> promise = group.next().newPromise();
+                pendingAcquireList.add(promise);
+                return promise;
+            }
         }
     }
 

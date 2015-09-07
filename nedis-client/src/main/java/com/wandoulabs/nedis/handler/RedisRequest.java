@@ -15,6 +15,7 @@
  */
 package com.wandoulabs.nedis.handler;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.Promise;
 
 /**
@@ -24,9 +25,9 @@ public class RedisRequest {
 
     private final Promise<Object> promise;
 
-    private final byte[][] params;
+    private final ByteBuf params;
 
-    public RedisRequest(Promise<Object> promise, byte[][] params) {
+    public RedisRequest(Promise<Object> promise, ByteBuf params) {
         this.promise = promise;
         this.params = params;
     }
@@ -35,8 +36,7 @@ public class RedisRequest {
         return promise;
     }
 
-    public byte[][] getParams() {
+    public ByteBuf getParams() {
         return params;
     }
-
 }

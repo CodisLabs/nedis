@@ -102,9 +102,7 @@ public class RedisDuplexHandler extends ChannelDuplexHandler {
                     break;
                 }
                 inMulti = true;
-                ctx.write(new byte[][] {
-                    MULTI.raw
-                }, promise);
+                ctx.write(RedisRequestEncoder.encode(ctx.alloc(), MULTI.raw), promise);
                 entryQ.addLast(new Entry(req.getPromise(), System.nanoTime()));
                 entryQ.addLast(TXN_MARKER);
                 break;
@@ -114,9 +112,7 @@ public class RedisDuplexHandler extends ChannelDuplexHandler {
                     req.getPromise().tryFailure(new IllegalStateException("not in MULTI"));
                     break;
                 }
-                ctx.write(new byte[][] {
-                    EXEC.raw
-                }, promise);
+                ctx.write(RedisRequestEncoder.encode(ctx.alloc(), EXEC.raw), promise);
                 inMulti = false;
                 entryQ.addLast(TXN_MARKER);
                 entryQ.addLast(new Entry(req.getPromise(), System.nanoTime()));
@@ -127,9 +123,7 @@ public class RedisDuplexHandler extends ChannelDuplexHandler {
                     req.getPromise().tryFailure(new IllegalStateException("not in MULTI"));
                     break;
                 }
-                ctx.write(new byte[][] {
-                    DISCARD.raw
-                }, promise);
+                ctx.write(RedisRequestEncoder.encode(ctx.alloc(), DISCARD.raw), promise);
                 inMulti = false;
                 entryQ.addLast(TXN_MARKER);
                 entryQ.addLast(new Entry(req.getPromise(), System.nanoTime()));

@@ -31,7 +31,6 @@ import java.net.SocketAddress;
 import java.util.concurrent.TimeUnit;
 
 import com.wandoulabs.nedis.handler.RedisDuplexHandler;
-import com.wandoulabs.nedis.handler.RedisRequestEncoder;
 import com.wandoulabs.nedis.handler.RedisResponseDecoder;
 import com.wandoulabs.nedis.util.AbstractNedisBuilder;
 
@@ -80,8 +79,7 @@ public class NedisClientBuilder extends AbstractNedisBuilder {
 
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
-                        ch.pipeline().addLast(new RedisRequestEncoder(),
-                                new RedisResponseDecoder(),
+                        ch.pipeline().addLast(new RedisResponseDecoder(),
                                 new RedisDuplexHandler(TimeUnit.MILLISECONDS.toNanos(timeoutMs)));
                     }
 
