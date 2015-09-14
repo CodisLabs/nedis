@@ -271,6 +271,10 @@ public class NedisClientPoolImpl implements NedisClientPool {
                 return closePromise;
             }
             closed = true;
+            if (numConns == 0) {
+                closePromise.trySuccess(null);
+                return closePromise;
+            }
             toClose = pool.toArray();
         }
         for (NedisClient client: toClose) {

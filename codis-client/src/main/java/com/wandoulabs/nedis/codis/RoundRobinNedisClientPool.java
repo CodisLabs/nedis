@@ -129,7 +129,10 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
         watcher.start(StartMode.POST_INITIALIZED_EVENT);
     }
 
-    private void resetPools() {
+    private synchronized void resetPools() {
+        if (closed.get()) {
+            return;
+        }
         List<PooledObject> oldPools = this.pools;
         Map<String, PooledObject> addr2Pool = new HashMap<>(oldPools.size());
         for (PooledObject pool: oldPools) {
@@ -192,18 +195,25 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
                 if (closeCurator) {
                     curatorClient.close();
                 }
-                List<PooledObject> toClose = pools;
-                final AtomicInteger numOpenPool = new AtomicInteger(toClose.size());
-                for (PooledObject pool: toClose) {
-                    pool.pool.close().addListener(new FutureListener<Void>() {
+                synchronized (RoundRobinNedisClientPool.this) {
+                    List<PooledObject> toClose = pools;
+                    if (toClose.isEmpty()) {
+                        closePromise.trySuccess(null);
+                        return;
+                    }
+                    final AtomicInteger remaining = new AtomicInteger(toClose.size());
+                    FutureListener<Void> listener = new FutureListener<Void>() {
 
                         @Override
                         public void operationComplete(Future<Void> future) throws Exception {
-                            if (numOpenPool.decrementAndGet() == 0) {
+                            if (remaining.decrementAndGet() == 0) {
                                 closePromise.trySuccess(null);
                             }
                         }
-                    });
+                    };
+                    for (PooledObject pool: toClose) {
+                        pool.pool.close().addListener(listener);
+                    }
                 }
             }
 
