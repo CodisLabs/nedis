@@ -240,6 +240,10 @@ public class NedisUtils {
 
     }
 
+    /**
+     * Return a {@link NedisClient} which does acquire-execute-release automatically. You do not
+     * need to call release when using the returned {@link NedisClient}.
+     */
     public static NedisClient newPooledClient(NedisClientPool pool) {
         return (NedisClient) Proxy.newProxyInstance(NedisClient.class.getClassLoader(),
                 new Class<?>[] {

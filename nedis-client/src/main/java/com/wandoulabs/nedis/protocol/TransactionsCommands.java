@@ -21,6 +21,7 @@ import java.util.List;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands#transactions
  */
 public interface TransactionsCommands {
 

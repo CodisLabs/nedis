@@ -87,9 +87,9 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
 
     private final AtomicInteger nextIdx = new AtomicInteger(-1);
 
-    private final Promise<Void> closeFuture;
+    private final Promise<Void> closePromise;
 
-    private final Promise<RoundRobinNedisClientPool> initFuture;
+    private final Promise<RoundRobinNedisClientPool> initPromise;
 
     private RoundRobinNedisClientPool(CuratorFramework curatorClient, boolean closeCurator,
             String zkProxyDir, NedisClientPoolBuilder poolBuilder) throws Exception {
@@ -97,8 +97,8 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
         this.closeCurator = closeCurator;
         this.poolBuilder = poolBuilder;
         EventLoop eventLoop = poolBuilder.group().next();
-        this.closeFuture = eventLoop.newPromise();
-        this.initFuture = eventLoop.newPromise();
+        this.closePromise = eventLoop.newPromise();
+        this.initPromise = eventLoop.newPromise();
         watcher = new PathChildrenCache(curatorClient, zkProxyDir, true);
         watcher.getListenable().addListener(new PathChildrenCacheListener() {
 
@@ -118,7 +118,7 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
                 if (!initialized) {
                     if (event.getType() == INITIALIZED) {
                         resetPools();
-                        initFuture.trySuccess(RoundRobinNedisClientPool.this);
+                        initPromise.trySuccess(RoundRobinNedisClientPool.this);
                         initialized = true;
                     }
                 } else if (RESET_TYPES.contains(event.getType())) {
@@ -165,12 +165,12 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
     }
 
     public Future<RoundRobinNedisClientPool> initFuture() {
-        return initFuture;
+        return initPromise;
     }
 
     @Override
     public Future<Void> closeFuture() {
-        return closeFuture;
+        return closePromise;
     }
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -178,7 +178,7 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
     @Override
     public Future<Void> close() {
         if (!closed.compareAndSet(false, true)) {
-            return closeFuture;
+            return closePromise;
         }
         new Thread(getClass().getSimpleName() + "-Closer") {
 
@@ -200,7 +200,7 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
                         @Override
                         public void operationComplete(Future<Void> future) throws Exception {
                             if (numOpenPool.decrementAndGet() == 0) {
-                                closeFuture.trySuccess(null);
+                                closePromise.trySuccess(null);
                             }
                         }
                     });
@@ -209,7 +209,7 @@ public class RoundRobinNedisClientPool implements NedisClientPool {
 
         }.start();
 
-        return closeFuture;
+        return closePromise;
     }
 
     @Override

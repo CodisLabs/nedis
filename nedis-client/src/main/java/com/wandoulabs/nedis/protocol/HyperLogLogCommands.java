@@ -19,6 +19,7 @@ import io.netty.util.concurrent.Future;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands#hyperloglog
  */
 public interface HyperLogLogCommands {
 

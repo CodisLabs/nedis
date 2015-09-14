@@ -18,6 +18,8 @@ package com.wandoulabs.nedis.util;
 import com.wandoulabs.nedis.NedisClient;
 
 /**
+ * An identity LinkedHashSet.
+ * 
  * @author Apache9
  */
 public class NedisClientHashSet {

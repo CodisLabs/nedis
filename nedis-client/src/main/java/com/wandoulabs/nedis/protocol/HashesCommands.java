@@ -22,6 +22,7 @@ import java.util.Map;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands#hash
  */
 public interface HashesCommands {
 

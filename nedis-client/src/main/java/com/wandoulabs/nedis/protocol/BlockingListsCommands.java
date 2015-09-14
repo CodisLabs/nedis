@@ -21,9 +21,10 @@ import java.util.List;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands#list
  */
 public interface BlockingListsCommands {
-    
+
     Future<List<byte[]>> blpop(long timeoutSeconds, byte[]... keys);
 
     Future<List<byte[]>> brpop(long timeoutSeconds, byte[]... keys);

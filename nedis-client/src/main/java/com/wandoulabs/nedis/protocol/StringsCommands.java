@@ -21,6 +21,7 @@ import io.netty.util.concurrent.Future;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands#string
  */
 public interface StringsCommands {
 

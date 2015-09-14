@@ -22,6 +22,7 @@ import java.util.List;
 
 /**
  * @author zhangduo
+ * @see http://redis.io/commands/scan
  */
 public class ScanResult<T> {
 

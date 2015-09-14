@@ -21,6 +21,7 @@ import java.util.Set;
 
 /**
  * @author zhangduo
+ * @see http://redis.io/commands#set
  */
 public interface SetsCommands {
 

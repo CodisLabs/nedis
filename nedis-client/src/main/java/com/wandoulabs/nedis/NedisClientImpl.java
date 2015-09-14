@@ -74,6 +74,10 @@ import com.wandoulabs.nedis.protocol.ZSetOpParams;
  */
 public class NedisClientImpl implements NedisClient {
 
+    private final Channel channel;
+
+    private final NedisClientPool pool;
+
     private final PromiseConverter<ScanResult<byte[]>> arrayScanResultConverter;
 
     private final PromiseConverter<Boolean> booleanConverter;
@@ -81,8 +85,6 @@ public class NedisClientImpl implements NedisClient {
     private final PromiseConverter<List<Boolean>> booleanListConverter;
 
     private final PromiseConverter<byte[]> bytesConverter;
-
-    private final Channel channel;
 
     private final PromiseConverter<Double> doubleConverter;
 
@@ -97,8 +99,6 @@ public class NedisClientImpl implements NedisClient {
     private final PromiseConverter<Object> objectConverter;
 
     private final PromiseConverter<List<Object>> objectListConverter;
-
-    private final NedisClientPool pool;
 
     private final PromiseConverter<Set<byte[]>> setConverter;
 
@@ -311,6 +311,51 @@ public class NedisClientImpl implements NedisClient {
         return execCmd(bytesConverter, encode(channel.alloc(), ECHO.raw, msg));
     }
 
+    private ByteBuf encodeSortParams(RedisCommand cmd, byte[] key, SortParams sort, byte[] dst) {
+        List<byte[]> params = new ArrayList<>();
+        params.add(key);
+        if (sort.by() != null) {
+            params.add(BY.raw);
+            params.add(sort.by());
+        }
+        if (!sort.limit().isEmpty()) {
+            params.add(LIMIT.raw);
+            params.addAll(sort.limit());
+        }
+        if (!sort.get().isEmpty()) {
+            params.addAll(sort.get());
+        }
+        if (sort.order() != null) {
+            params.add(sort.order());
+        }
+        if (sort.getAlpha() != null) {
+            params.add(sort.getAlpha());
+        }
+        if (dst != null) {
+            params.add(STORE.raw);
+            params.add(dst);
+        }
+        return encode(channel.alloc(), cmd.raw, params);
+    }
+
+    private ByteBuf encodeZSetOpParams(RedisCommand cmd, byte[] dst, ZSetOpParams params) {
+        byte[][] p = new byte[2 + params.keys().size() + params.weights().size()
+                + (params.aggregate() != null ? 1 : 0)][];
+        p[0] = dst;
+        p[1] = toBytes(params.keys().size());
+        int i = 2;
+        for (byte[] key: params.keys()) {
+            p[i++] = key;
+        }
+        for (byte[] weight: params.weights()) {
+            p[i++] = weight;
+        }
+        if (params.aggregate() != null) {
+            p[i] = params.aggregate().raw;
+        }
+        return encode(channel.alloc(), cmd.raw, p);
+    }
+
     @Override
     public Future<Object> eval(byte[] script, int numKeys, byte[]... keysvalues) {
         return execCmd(objectConverter,
@@ -380,6 +425,11 @@ public class NedisClientImpl implements NedisClient {
     @Override
     public Future<Boolean> exists(byte[] key) {
         return execCmd(booleanConverter, encode(channel.alloc(), EXISTS.raw, key));
+    }
+
+    @Override
+    public Future<Long> exists(byte[]... keys) {
+        return execCmd(longConverter, encode(channel.alloc(), EXISTS.raw, keys));
     }
 
     @Override
@@ -973,51 +1023,6 @@ public class NedisClientImpl implements NedisClient {
         return execCmd(listConverter, encode(channel.alloc(), TIME.raw));
     }
 
-    private ByteBuf encodeSortParams(RedisCommand cmd, byte[] key, SortParams sort, byte[] dst) {
-        List<byte[]> params = new ArrayList<>();
-        params.add(key);
-        if (sort.by() != null) {
-            params.add(BY.raw);
-            params.add(sort.by());
-        }
-        if (!sort.limit().isEmpty()) {
-            params.add(LIMIT.raw);
-            params.addAll(sort.limit());
-        }
-        if (!sort.get().isEmpty()) {
-            params.addAll(sort.get());
-        }
-        if (sort.order() != null) {
-            params.add(sort.order());
-        }
-        if (sort.getAlpha() != null) {
-            params.add(sort.getAlpha());
-        }
-        if (dst != null) {
-            params.add(STORE.raw);
-            params.add(dst);
-        }
-        return encode(channel.alloc(), cmd.raw, params);
-    }
-
-    private ByteBuf encodeZSetOpParams(RedisCommand cmd, byte[] dst, ZSetOpParams params) {
-        byte[][] p = new byte[2 + params.keys().size() + params.weights().size()
-                + (params.aggregate() != null ? 1 : 0)][];
-        p[0] = dst;
-        p[1] = toBytes(params.keys().size());
-        int i = 2;
-        for (byte[] key: params.keys()) {
-            p[i++] = key;
-        }
-        for (byte[] weight: params.weights()) {
-            p[i++] = weight;
-        }
-        if (params.aggregate() != null) {
-            p[i] = params.aggregate().raw;
-        }
-        return encode(channel.alloc(), cmd.raw, p);
-    }
-
     @Override
     public Future<Long> ttl(byte[] key) {
         return execCmd(longConverter, encode(channel.alloc(), TTL.raw, key));
@@ -1253,12 +1258,12 @@ public class NedisClientImpl implements NedisClient {
     }
 
     @Override
-    public Future<Long> zunionstore(byte[] dst, ZSetOpParams params) {
-        return execCmd(longConverter, encodeZSetOpParams(ZUNIONSTORE, dst, params));
+    public Future<Long> zunionstore(byte[] dst, byte[]... keys) {
+        return execCmd(longConverter, encodeReverse(channel.alloc(), ZUNIONSTORE.raw, keys, dst));
     }
 
     @Override
-    public Future<Long> zunionstore(byte[] dst, byte[]... keys) {
-        return execCmd(longConverter, encodeReverse(channel.alloc(), ZUNIONSTORE.raw, keys, dst));
+    public Future<Long> zunionstore(byte[] dst, ZSetOpParams params) {
+        return execCmd(longConverter, encodeZSetOpParams(ZUNIONSTORE, dst, params));
     }
 }

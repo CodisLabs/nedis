@@ -19,6 +19,7 @@ import static com.wandoulabs.nedis.util.NedisUtils.toBytes;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands/scan
  */
 public class ScanParams {
 

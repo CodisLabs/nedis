@@ -18,7 +18,12 @@ package com.wandoulabs.nedis.protocol;
 import io.netty.util.concurrent.Future;
 
 /**
- * @author zhangduo
+ * You can not call these methods except {@code PING} if the
+ * {@link com.wandoulabs.nedis.NedisClient} is borrowed from a
+ * {@link com.wandoulabs.nedis.NedisClientPool}.
+ * 
+ * @author Apache9
+ * @see http://redis.io/commands#connection
  */
 public interface ConnectionCommands {
 

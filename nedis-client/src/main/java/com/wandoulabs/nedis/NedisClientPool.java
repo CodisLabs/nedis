@@ -22,13 +22,35 @@ import io.netty.util.concurrent.Future;
  */
 public interface NedisClientPool extends AsyncCloseable {
 
+    /**
+     * Acquire a {@link NedisClient} from this pool.
+     */
     Future<NedisClient> acquire();
 
+    /**
+     * Return a {@link NedisClient} to this pool.
+     * <p>
+     * Usually you should not call this method directly, call {@link NedisClient#release()} instead.
+     */
     void release(NedisClient client);
 
+    /**
+     * Whether we should remove the {@link NedisClient} from pool when acquiring.
+     * <p>
+     * If you are doing time-consuming operations(such as {@code BLPOP}) then you should set this to
+     * {@code true}
+     */
     boolean exclusive();
 
+    /**
+     * Total number of alive {@link NedisClient}s.
+     * <p>
+     * This could be larger than {@link #numPooledConns()} if {@link #exclusive()} is {@code true}.
+     */
     int numConns();
 
+    /**
+     * Number of {@link NedisClient}s in pool.
+     */
     int numPooledConns();
 }

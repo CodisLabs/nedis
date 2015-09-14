@@ -22,6 +22,8 @@ import java.util.List;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands/zinterstore
+ * @see http://redis.io/commands/zunionstore
  */
 public class ZSetOpParams {
 

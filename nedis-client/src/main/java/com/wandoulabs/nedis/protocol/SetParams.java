@@ -17,6 +17,7 @@ package com.wandoulabs.nedis.protocol;
 
 /**
  * @author Apache9
+ * @see http://redis.io/commands/set
  */
 public class SetParams {
 

@@ -20,7 +20,10 @@ import io.netty.util.concurrent.Future;
 import java.util.List;
 
 /**
+ * {@code WAIT} is not supported yet.
+ * 
  * @author Apache9
+ * @see http://redis.io/commands#generic
  */
 public interface KeysCommands {
 
@@ -29,6 +32,8 @@ public interface KeysCommands {
     Future<byte[]> dump(byte[] key);
 
     Future<Boolean> exists(byte[] key);
+
+    Future<Long> exists(byte[]... keys);
 
     Future<Boolean> expire(byte[] key, long seconds);
 

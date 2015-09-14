@@ -20,7 +20,10 @@ import io.netty.util.concurrent.Future;
 import java.util.List;
 
 /**
+ * {@code MONITOR}, {@code SHUTDOWN} and {@code SLOWLOG} are not supported yet.
+ * 
  * @author Apache9
+ * @see http://redis.io/commands#server
  */
 public interface ServerCommands {
 
