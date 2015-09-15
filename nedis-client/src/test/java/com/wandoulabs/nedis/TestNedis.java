@@ -248,4 +248,11 @@ public class TestNedis {
             client2.release();
         }
     }
+
+    @Test
+    public void testInfiniteWaitWhenClosing() throws InterruptedException {
+        pool = NedisClientPoolBuilder.create()
+                .remoteAddress(new InetSocketAddress("127.0.0.1", PORT)).build();
+        pool.close().sync();
+    }
 }

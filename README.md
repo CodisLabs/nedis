@@ -41,7 +41,7 @@ NedisClient nedis = NedisUtils.newPooledClient(nedisPool);
 nedis.set(NedisUtils.toBytes("foo"), NedisUtils.toBytes("bar")).sync();
 byte[] value = nedis.get(NedisUtils.toBytes("foo")).sync().getNow();
 System.out.println(NedisUtils.bytesToString(value));
- nedis.close().sync();
+nedis.close().sync();
 ```
 
 ## Performance

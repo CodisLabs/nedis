@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.wandoulabs.nedis</groupId>
     <artifactId>nedis</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.1</version>
     <packaging>pom</packaging>
     <name>nedis</name>
     <description>Redis client based on netty</description>
@@ -33,13 +33,13 @@
             <dependency>
                 <groupId>com.wandoulabs.nedis</groupId>
                 <artifactId>nedis-client</artifactId>
-                <version>0.1.1-SNAPSHOT</version>
+                <version>0.1.1</version>
             </dependency>
             <dependency>
                 <groupId>com.wandoulabs.nedis</groupId>
                 <artifactId>nedis-client</artifactId>
                 <type>test-jar</type>
-                <version>0.1.1-SNAPSHOT</version>
+                <version>0.1.1</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
