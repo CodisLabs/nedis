@@ -16,10 +16,10 @@ if [ $# -lt 2 ]; then
 fi
 
 if [ "$1" == nedis ]; then
-    MAINCLASS="com.wandoulabs.nedis.bench.NedisBench"
+    MAINCLASS="io.codis.nedis.bench.NedisBench"
     OUT_FILE=nedis.out.$(date +%y%m%d-%H%M%S)
 else
-    MAINCLASS="com.wandoulabs.nedis.bench.JedisBench"
+    MAINCLASS="io.codis.nedis.bench.JedisBench"
     OUT_FILE=jedis.out.$(date +%y%m%d-%H%M%S)
 fi
 
