@@ -3,10 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>nedis</artifactId>
-        <groupId>com.wandoulabs.nedis</groupId>
-        <version>0.1.2-SNAPSHOT</version>
+        <groupId>io.codis.nedis</groupId>
+        <version>0.2.0-SNAPSHOT</version>
     </parent>
-    <groupId>com.wandoulabs.nedis</groupId>
+    <groupId>io.codis.nedis</groupId>
     <artifactId>nedis-bench</artifactId>
     <version>0.2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -20,7 +20,7 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>com.wandoulabs.nedis</groupId>
+            <groupId>io.codis.nedis</groupId>
             <artifactId>nedis-client</artifactId>
         </dependency>
         <dependency>

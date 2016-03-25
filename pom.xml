@@ -2,7 +2,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.wandoulabs.nedis</groupId>
+    <groupId>io.codis.nedis</groupId>
     <artifactId>nedis</artifactId>
     <version>0.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -27,17 +27,17 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
         <maven.compile.encoding>UTF-8</maven.compile.encoding>
-        <netty.version>4.0.33.Final</netty.version>
+        <netty.version>4.0.35.Final</netty.version>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.wandoulabs.nedis</groupId>
+                <groupId>io.codis.nedis</groupId>
                 <artifactId>nedis-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.wandoulabs.nedis</groupId>
+                <groupId>io.codis.nedis</groupId>
                 <artifactId>nedis-client</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
